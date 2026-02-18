@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Megapari Affiliate Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800&family=Anton&family=Russo+One&family=Teko:wght@600;700&family=Barlow+Condensed:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ac:#e53935;--ac2:#c62828;--dark:#0a0a0f;
+  --card:#12121a;--card2:#1a1a26;--border:rgba(229,57,53,.18);
+  --text:#f0f0f8;--muted:#8888aa;--blue2:#82b1ff;--amber:#ffab40;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--dark);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 5% 10%,rgba(229,57,53,.07) 0%,transparent 55%),radial-gradient(ellipse 50% 40% at 95% 90%,rgba(92,159,212,.05) 0%,transparent 50%);pointer-events:none;z-index:0;}
+.wrap{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:0 18px;}
+
+/* HEADER */
+header{padding:18px 0 12px;border-bottom:1px solid var(--border);}
+.hdr-inner{display:flex;align-items:center;justify-content:space-between;gap:14px;}
+.logo-link{text-decoration:none;cursor:pointer;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;color:var(--ac);letter-spacing:3px;line-height:1;}
+.logo span{color:var(--text);}
+.portal-label{font-size:.56rem;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase;margin-top:2px;}
+
+/* TABS */
+.page-tabs{display:flex;border-bottom:1px solid var(--border);}
+.ptab{padding:13px 20px;font-size:.82rem;font-weight:600;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;transition:all .15s;user-select:none;}
+.ptab:hover{color:var(--text);}
+.ptab.on{color:var(--ac);border-bottom-color:var(--ac);}
+.pview{display:none;padding:26px 0 60px;}.pview.on{display:block;}
+
+/* HERO */
+.hero{padding:34px 0 22px;text-align:center;}
+.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,7vw,4.2rem);line-height:.95;letter-spacing:4px;}
+.hero h1 em{color:var(--ac);font-style:normal;display:block;}
+.hero p{margin:11px auto 24px;color:var(--muted);font-size:.88rem;max-width:420px;line-height:1.65;}
+
+/* SEARCH BOX */
+.search-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;max-width:480px;margin:0 auto 18px;box-shadow:0 8px 32px rgba(0,0,0,.4);}
+.fl{display:block;font-size:.62rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);font-weight:600;margin-bottom:5px;}
+.search-box select,.search-box input[type=text]{width:100%;background:#0d0d15;border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 12px;font-family:'Outfit',sans-serif;font-size:.88rem;outline:none;transition:border-color .2s;margin-bottom:10px;}
+.search-box select:focus,.search-box input:focus{border-color:var(--ac);}
+.btn-s{width:100%;padding:11px;background:var(--ac);color:#fff;border:none;border-radius:8px;font-family:'Outfit',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px;}
+.btn-s:hover{background:var(--ac2);transform:translateY(-1px);}
+.btn-s:disabled{opacity:.6;cursor:wait;transform:none;}
+.btn-s.outline{background:transparent;border:1px solid rgba(229,57,53,.4);color:var(--ac);}
+.btn-s.outline:hover{background:rgba(229,57,53,.08);}
+
+/* REGISTER FORM */
+.reg-note{font-size:.76rem;color:var(--muted);line-height:1.6;margin-bottom:12px;padding:9px 12px;background:rgba(229,57,53,.04);border:1px solid rgba(229,57,53,.14);border-radius:8px;}
+.reg-note strong{color:var(--ac);}
+
+/* RESULTS */
+#results{display:none;}
+.aff-hdr{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.aff-badge{background:rgba(229,57,53,.12);border:1px solid rgba(229,57,53,.3);border-radius:6px;padding:2px 8px;font-size:.64rem;color:var(--ac);font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+.aff-name{font-size:.96rem;font-weight:600;}
+.promo-chip{background:#1a0d0d;padding:3px 12px;border-radius:20px;font-size:.81rem;color:var(--ac);font-weight:800;letter-spacing:1.5px;margin-left:auto;border:1px solid rgba(229,57,53,.25);}
+.links-bar{display:flex;gap:7px;flex-wrap:wrap;padding:11px 14px;background:var(--card2);border:1px solid var(--border);border-radius:12px;margin-bottom:16px;}
+.li{display:flex;flex-direction:column;gap:2px;flex:1;min-width:120px;}
+.li label{font-size:.56rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;}
+.li a{font-size:.71rem;color:var(--blue2);word-break:break-all;text-decoration:none;}
+.li a:hover{text-decoration:underline;}
+.li span{font-size:.81rem;color:var(--ac);font-weight:800;letter-spacing:1px;}
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px;color:var(--muted);margin:20px 0 9px;padding-bottom:5px;border-bottom:1px solid var(--border);}
+
+/* BANNER GRID */
+.banner-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:11px;}
+.banner-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s,transform .18s;}
+.banner-card:hover{border-color:var(--ac);transform:translateY(-2px);}
+.banner-img{width:100%;background:#0a0a0f;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:76px;}
+.banner-img canvas{display:block;width:100%;height:auto;}
+.banner-img .ldr{color:var(--muted);font-size:.71rem;padding:16px;}
+.banner-meta{padding:8px 11px;}
+.banner-date{font-size:.62rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.banner-cd{font-size:.66rem;color:var(--amber);font-weight:700;margin-top:2px;}
+.btn-dl{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;margin-top:6px;padding:6px;background:rgba(229,57,53,.08);border:1px solid rgba(229,57,53,.25);border-radius:6px;color:var(--ac);font-size:.7rem;font-weight:700;cursor:pointer;transition:all .18s;letter-spacing:1px;text-transform:uppercase;}
+.btn-dl:hover{background:rgba(229,57,53,.18);border-color:var(--ac);}
+
+/* CAPTION PAIRS */
+.cap-pair{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:11px;overflow:hidden;}
+.cap-top{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:9px 14px 0;}
+.cap-num{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;flex:1;}
+.cap-btns{display:flex;gap:5px;}
+.copy-btn{background:rgba(229,57,53,.08);border:1px solid rgba(229,57,53,.2);border-radius:5px;padding:4px 11px;font-size:.65rem;color:var(--ac);cursor:pointer;transition:all .18s;letter-spacing:1px;text-transform:uppercase;font-family:'Outfit',sans-serif;font-weight:700;}
+.copy-btn:hover{background:rgba(229,57,53,.18);}
+.copy-btn.ok{background:var(--ac);color:#fff;border-color:var(--ac);}
+.copy-img-btn{background:rgba(92,159,212,.08);border:1px solid rgba(92,159,212,.2);border-radius:5px;padding:4px 11px;font-size:.65rem;color:var(--blue2);cursor:pointer;transition:all .18s;letter-spacing:1px;text-transform:uppercase;font-family:'Outfit',sans-serif;font-weight:700;}
+.copy-img-btn:hover{background:rgba(92,159,212,.18);}
+.copy-img-btn.ok{background:var(--blue2);color:#000;}
+.cap-body{display:grid;}
+.cap-text-wrap{padding:10px 14px;white-space:pre-wrap;font-size:.84rem;line-height:1.75;}
+.cap-banner-side{width:220px;flex-shrink:0;background:#060610;display:flex;flex-direction:column;align-items:center;justify-content:center;border-left:1px solid var(--border);padding:8px;gap:6px;}
+.cap-banner-side canvas{display:block;width:100%;height:auto;max-height:160px;border-radius:5px;}
+
+/* LOADING SPINNER */
+.loading-box{text-align:center;padding:30px;color:var(--muted);}
+.loading-box .spin{font-size:2rem;animation:spin 1s linear infinite;display:inline-block;}
+@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg)}}
+
+/* EMPTY */
+.empty{text-align:center;padding:28px;color:var(--muted);}
+.empty .ei{font-size:1.9rem;margin-bottom:6px;opacity:.4;}
+
+/* STATUS BOXES */
+.status-box{padding:10px 13px;border-radius:8px;font-size:.81rem;line-height:1.6;margin-top:10px;display:none;}
+.status-box.ok{background:rgba(92,159,212,.1);color:var(--blue2);border:1px solid rgba(92,159,212,.2);}
+.status-box.err{background:rgba(255,82,82,.1);color:#ff5252;border:1px solid rgba(255,82,82,.2);}
+.status-box.warn{background:rgba(255,171,64,.1);color:var(--amber);border:1px solid rgba(255,171,64,.2);}
+
+/* TOAST */
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ac);color:#fff;padding:7px 18px;border-radius:30px;font-weight:700;font-size:.76rem;transition:transform .28s;z-index:999;pointer-events:none;white-space:nowrap;}
+#toast.on{transform:translateX(-50%) translateY(0);}
+
+/* HIDDEN ADMIN */
+#admin-access{position:fixed;bottom:0;right:0;width:36px;height:36px;cursor:pointer;z-index:50;opacity:0;}
+
+@media(max-width:600px){
+  .aff-hdr{flex-direction:column;align-items:flex-start;}
+  .promo-chip{margin-left:0;}
+  .cap-body{grid-template-columns:1fr!important;}
+  .cap-banner-side{width:100%;max-height:160px;border-left:none;border-top:1px solid var(--border);}
+  .ptab{padding:10px 13px;font-size:.76rem;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="hdr-inner">
+      <a class="logo-link" href="index.html">
+        <div class="logo">MEGA<span>PARI</span></div>
+        <div class="portal-label">Affiliate Materials Portal</div>
+      </a>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <div class="page-tabs">
+    <div class="ptab on" id="tab-search" onclick="switchTab('search')">🔍 Get My Materials</div>
+    <div class="ptab" id="tab-register" onclick="switchTab('register')">📝 Join / Register</div>
+  </div>
+
+  <!-- TAB 1: GET MATERIALS -->
+  <div class="pview on" id="view-search">
+    <section class="hero">
+      <h1>YOUR <em>PROMO</em> TOOLKIT</h1>
+      <p>Enter your Affiliate ID to instantly access your personalised banners, captions, and referral links — from any device.</p>
+    </section>
+    <div class="search-box">
+      <label class="fl">Select Language</label>
+      <select id="langSelect">
+        <option value="en">🇬🇧 English</option><option value="fr">🇫🇷 French</option>
+        <option value="ar">🇸🇦 Arabic</option><option value="es">🇪🇸 Spanish</option><option value="pt">🇧🇷 Portuguese</option>
+      </select>
+      <label class="fl">Affiliate ID</label>
+      <input type="text" id="affIn" placeholder="e.g. AFF12345" onkeydown="if(event.key==='Enter')doSearch()"/>
+      <button class="btn-s" id="search-btn" onclick="doSearch()">🔍 GET MY MATERIALS</button>
+      <p style="text-align:center;margin-top:9px;font-size:.7rem;color:var(--muted)">
+        New affiliate? <span style="color:var(--ac);cursor:pointer;font-weight:700" onclick="switchTab('register')">Register here →</span>
+      </p>
+    </div>
+    <div id="search-status" class="status-box"></div>
+
+    <section id="results">
+      <div class="aff-hdr">
+        <span class="aff-badge">✓ Verified</span>
+        <span class="aff-name" id="r-name">—</span>
+        <span class="promo-chip" id="r-promo">CODE: —</span>
+      </div>
+      <div class="links-bar" id="r-links"></div>
+      <div id="dated-sec">
+        <div class="sec-title">📅 DATED BANNERS</div>
+        <div class="banner-grid" id="dated-grid"></div>
+      </div>
+      <div id="ev-sec">
+        <div class="sec-title">♾️ EVERGREEN BANNERS</div>
+        <div class="banner-grid" id="ev-grid"></div>
+      </div>
+      <div id="txt-sec">
+        <div class="sec-title">✍️ POST CAPTIONS</div>
+        <div id="txt-list"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- TAB 2: REGISTER -->
+  <div class="pview" id="view-register">
+    <section class="hero">
+      <h1>JOIN AS AN <em>AFFILIATE</em></h1>
+      <p>Fill in your details. Your account will be reviewed and activated by the admin — usually within 24 hours.</p>
+    </section>
+    <div class="search-box" style="max-width:540px">
+      <div class="reg-note">
+        ⚠️ <strong>Important:</strong> Registration is <strong>pending</strong> until approved by admin.
+        Once approved, enter your Affiliate ID in <strong>Get My Materials</strong> — works on any device instantly.
+      </div>
+      <label class="fl">Affiliate ID (choose a unique ID) *</label>
+      <input type="text" id="reg-id" placeholder="e.g. JOHN2024"/>
+      <label class="fl">Your Name</label>
+      <input type="text" id="reg-name" placeholder="John Doe"/>
+      <label class="fl">Promo Code *</label>
+      <input type="text" id="reg-promo" placeholder="e.g. JOHN50"/>
+      <label class="fl">Player / Referral Link</label>
+      <input type="text" id="reg-player" placeholder="https://..."/>
+      <label class="fl">Android APK Link</label>
+      <input type="text" id="reg-apk" placeholder="https://..."/>
+      <label class="fl">iOS App Link</label>
+      <input type="text" id="reg-ios" placeholder="https://..."/>
+      <label class="fl">Preferred Language</label>
+      <select id="reg-lang">
+        <option value="en">🇬🇧 English</option><option value="fr">🇫🇷 French</option>
+        <option value="ar">🇸🇦 Arabic</option><option value="es">🇪🇸 Spanish</option><option value="pt">🇧🇷 Portuguese</option>
+      </select>
+      <button class="btn-s" onclick="submitReg()" style="margin-top:4px">📤 SUBMIT REGISTRATION</button>
+      <div id="reg-status" class="status-box"></div>
+    </div>
+  </div>
+</div>
+
+<div id="admin-access" onclick="goAdmin()"></div>
+<div id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+// ═══════════════════════════════════════════════════
+// CLOUD STORAGE (shared=true means cross-device)
+// ═══════════════════════════════════════════════════
+const CLOUD={
+  async get(k){try{const r=await window.storage.get(k,true);return r?JSON.parse(r.value):null;}catch(e){return null;}},
+  async set(k,v){try{await window.storage.set(k,JSON.stringify(v),true);return true;}catch(e){return false;}}
+};
+
+const K={
+  affs:'mp:affiliates',
+  banners:'mp:banners',
+  texts:'mp:texts',
+  regs:'mp:pendingregs',
+  img:id=>'mp:img:'+id
+};
+
+// ─ Simple cache so we don't hammer cloud on every render ─
+let _c={};
+async function cGet(k,def){
+  if(_c[k]!==undefined)return _c[k];
+  const v=await CLOUD.get(k);_c[k]=v!==null?v:def;return _c[k];
+}
+
+// ═══════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════
+window.switchTab=function(t){
+  document.querySelectorAll('.ptab').forEach(el=>el.classList.remove('on'));
+  document.querySelectorAll('.pview').forEach(el=>el.classList.remove('on'));
+  document.getElementById('tab-'+t).classList.add('on');
+  document.getElementById('view-'+t).classList.add('on');
+};
+
+// ═══════════════════════════════════════════════════
+// BANNER EXPIRY
+// ═══════════════════════════════════════════════════
+function removeAt(b){if(b.evergreen||!b.endDate)return Infinity;const e=new Date(b.endDate);e.setHours(23,59,59,999);return e.getTime()+35*3600*1000;}
+function isActive(b){return Date.now()<removeAt(b);}
+function msLeft(b){return Math.max(0,removeAt(b)-Date.now());}
+function fmtCD(ms){if(ms<=0)return'Removing soon…';const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000),s=Math.floor((ms%60000)/1000);return`Removes in ${h}h ${m}m ${s}s`;}
+
+// ═══════════════════════════════════════════════════
+// AUTO-FIT + STAMP
+// ═══════════════════════════════════════════════════
+function autoFitSize(ctx,text,zoneW,zoneH,fontFamily){
+  const hi0=Math.min(Math.floor(zoneH*1.05),400);
+  let lo=6,hi=hi0,best=lo;
+  for(let i=0;i<26;i++){
+    if(lo>hi)break;
+    const mid=Math.floor((lo+hi)/2);
+    ctx.font=`bold ${mid}px '${fontFamily}',Arial,sans-serif`;
+    const m=ctx.measureText(text);
+    const tw=m.width;
+    const th=(m.actualBoundingBoxAscent!==undefined)?(m.actualBoundingBoxAscent+m.actualBoundingBoxDescent):mid*1.1;
+    if(tw<=zoneW&&th<=zoneH){best=mid;lo=mid+1;}else{hi=mid-1;}
+  }
+  return Math.max(best,6);
+}
+
+function stampCanvas(ctx,banner,promoCode){
+  if(!banner.promoConfig||!promoCode)return;
+  const pc=banner.promoConfig;
+  ctx.save();ctx.beginPath();ctx.rect(pc.x,pc.y,pc.w,pc.h);ctx.clip();
+  const ff=pc.font?`'${pc.font}'`:'Arial Black';
+  let fsize=pc.size||36;
+  if(pc.autofit!==false)fsize=autoFitSize(ctx,promoCode,pc.w,pc.h,pc.font||'Arial Black');
+  ctx.font=`bold ${fsize}px ${ff},Arial,sans-serif`;
+  if(pc.gradient&&pc.color2){
+    const dir=pc.gradDir||'lr';let grd;
+    if(dir==='lr')grd=ctx.createLinearGradient(pc.x,pc.y,pc.x+pc.w,pc.y);
+    else if(dir==='tb')grd=ctx.createLinearGradient(pc.x,pc.y,pc.x,pc.y+pc.h);
+    else grd=ctx.createLinearGradient(pc.x,pc.y,pc.x+pc.w,pc.y+pc.h);
+    grd.addColorStop(0,pc.color||'#fff');grd.addColorStop(1,pc.color2);ctx.fillStyle=grd;
+  } else {ctx.fillStyle=pc.color||'#ffffff';}
+  const align=pc.align||'center';ctx.textAlign=align;ctx.textBaseline='middle';
+  const tx=align==='center'?pc.x+pc.w/2:align==='left'?pc.x+4:pc.x+pc.w-4;
+  ctx.fillText(promoCode,tx,pc.y+pc.h/2);ctx.restore();
+}
+
+function drawStamped(canvas,imgSrc,banner,promoCode,onDone){
+  const img=new Image();
+  img.onload=function(){canvas.width=img.width;canvas.height=img.height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);stampCanvas(ctx,banner,promoCode);if(onDone)onDone();};
+  img.src=imgSrc;
+}
+
+// ═══════════════════════════════════════════════════
+// SEARCH
+// ═══════════════════════════════════════════════════
+function setStatus(elId,type,msg){
+  const el=document.getElementById(elId);
+  el.className='status-box '+type;el.textContent=msg;el.style.display='block';
+}
+function hideStatus(elId){document.getElementById(elId).style.display='none';}
+
+window.doSearch=async function(){ _c={};
+  const id=document.getElementById('affIn').value.trim();
+  const lang=document.getElementById('langSelect').value;
+  if(!id){setStatus('search-status','err','Please enter your Affiliate ID.');return;}
+
+  const btn=document.getElementById('search-btn');
+  btn.textContent='⏳ Loading…';btn.disabled=true;
+  hideStatus('search-status');
+
+  try{
+    const affs=await cGet(K.affs,[])||[];
+    
+    const aff=affs.find(a=>
+      a.id.toLowerCase()===id.toLowerCase() ||
+      (a.promoCode && a.promoCode.toLowerCase()===id.toLowerCase())
+    );
+
+
+    if(!aff){
+      // Check pending
+      const regs=await cGet(K.regs,[])||[];
+      const pending=regs.find(r=>r.id.toLowerCase()===id.toLowerCase());
+      if(pending){
+        setStatus('search-status','warn','⏳ Your registration is pending admin approval. Please wait — usually within 24 hours.');
+      } else {
+        setStatus('search-status','err','❌ Affiliate ID not found. Check your ID or use the Register tab to join.');
+      }
+      return;
+    }
+    hideStatus('search-status');
+    await renderResults(aff,lang);
+  } finally {
+    btn.textContent='🔍 GET MY MATERIALS';btn.disabled=false;
+  }
+};
+
+let _cdTimers=[];
+async function renderResults(aff,lang){
+  _cdTimers.forEach(clearInterval);_cdTimers=[];
+
+  document.getElementById('r-name').textContent=aff.name||aff.id;
+  document.getElementById('r-promo').textContent='CODE: '+(aff.promoCode||'—');
+  document.getElementById('r-links').innerHTML=`
+    <div class="li"><label>Affiliate ID</label><span style="color:var(--text);font-weight:600">${eh(aff.id)}</span></div>
+    <div class="li"><label>Player Link</label>${aff.playerLink?`<a href="${eh(aff.playerLink)}" target="_blank">${trunc(aff.playerLink,26)}</a>`:'<span style="color:var(--muted)">—</span>'}</div>
+    <div class="li"><label>Android APK</label>${aff.apkLink?`<a href="${eh(aff.apkLink)}" target="_blank">${trunc(aff.apkLink,26)}</a>`:'<span style="color:var(--muted)">—</span>'}</div>
+    <div class="li"><label>iOS App</label>${aff.iosLink?`<a href="${eh(aff.iosLink)}" target="_blank">${trunc(aff.iosLink,26)}</a>`:'<span style="color:var(--muted)">—</span>'}</div>
+    <div class="li"><label>Promo Code</label><span>${eh(aff.promoCode||'—')}</span></div>`;
+
+  const affLang=aff.lang||lang;
+  const allBanners=(await cGet(K.banners,[])||[]).filter(isActive);
+  const dated=allBanners.filter(b=>!b.evergreen&&b.lang===affLang);
+  const evergreen=allBanners.filter(b=>b.evergreen&&b.lang===affLang);
+  const texts=(await cGet(K.texts,[])||[]).filter(t=>t.lang===affLang);
+
+  await renderBannerGrid('dated-grid',dated,aff,'No dated banners active right now');
+  await renderBannerGrid('ev-grid',evergreen,aff,'No evergreen banners available');
+  await renderCaptions(texts,aff,affLang,allBanners);
+
+  document.getElementById('results').style.display='block';
+  document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function renderBannerGrid(gridId,banners,aff,emptyMsg){
+  const grid=document.getElementById(gridId);
+  if(!banners.length){grid.innerHTML=`<div class="empty"><div class="ei">🖼️</div><p>${emptyMsg}</p></div>`;return;}
+
+  grid.innerHTML=banners.map(b=>{
+    const ms=msLeft(b);
+    const cdHtml=!b.evergreen&&ms<Infinity?`<div class="banner-cd" id="bcd-${b.id}">${fmtCD(ms)}</div>`:'';
+    return`<div class="banner-card">
+      <div class="banner-img" id="bi-${b.id}"><div class="ldr">Loading…</div></div>
+      <div class="banner-meta">
+        <div class="banner-date">${b.evergreen?'Evergreen':(b.startDate+' – '+b.endDate)}</div>
+        ${cdHtml}
+        <button class="btn-dl" onclick="dlBanner('${b.id}','${eh(aff.promoCode)}')">⬇ Download</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Countdown timers
+  banners.filter(b=>!b.evergreen).forEach(b=>{
+    const el=document.getElementById('bcd-'+b.id);if(!el)return;
+    const t=setInterval(()=>{const ms2=msLeft(b);if(ms2<=0){clearInterval(t);el.textContent='Removed';return;}el.textContent=fmtCD(ms2);},1000);
+    _cdTimers.push(t);
+  });
+
+  // Load images from cloud
+  for(const b of banners){
+    const wrap=document.getElementById('bi-'+b.id);if(!wrap)continue;
+    try{
+      const src=await CLOUD.get(K.img(b.id));
+      if(!src){wrap.innerHTML='<div class="ldr">Image unavailable</div>';continue;}
+      wrap.innerHTML='';
+      const canvas=document.createElement('canvas');
+      wrap.appendChild(canvas);
+      drawStamped(canvas,src,b,aff.promoCode);
+    }catch(e){wrap.innerHTML='<div class="ldr">Error</div>';}
+  }
+}
+
+async function renderCaptions(texts,aff,affLang,allActive){
+  const tEl=document.getElementById('txt-list');
+  if(!texts.length){tEl.innerHTML='<div class="empty"><div class="ei">✍️</div><p>No captions available for this language</p></div>';return;}
+
+  const capHtmls=await Promise.all(texts.map(async(t,i)=>{
+    const filled=fillText(t.content,aff);
+    const enc=encodeURIComponent(filled);
+    const assignedB=allActive.find(b=>b.assignedTextId===t.id&&b.lang===affLang);
+    let sideHtml='';let hasBanner=false;
+    if(assignedB){
+      try{
+        const src=await CLOUD.get(K.img(assignedB.id));
+        if(src){
+          hasBanner=true;
+          sideHtml=`<div class="cap-banner-side">
+            <canvas id="cbc-${assignedB.id}-${i}" data-bid="${assignedB.id}" data-promo="${eh(aff.promoCode)}"></canvas>
+            <button class="copy-img-btn" onclick="copyBannerImage('cbc-${assignedB.id}-${i}',this)">🖼️ Copy Image</button>
+          </div>`;
+        }
+      }catch(e){}
+    }
+    return`<div class="cap-pair">
+      <div class="cap-top">
+        <span class="cap-num">Caption ${i+1}</span>
+        <div class="cap-btns"><button class="copy-btn" onclick="doCopy(this,'${enc}')">📋 Copy Text</button></div>
+      </div>
+      <div class="cap-body" style="grid-template-columns:${hasBanner?'1fr 220px':'1fr'}">
+        <div class="cap-text-wrap">${eh(filled)}</div>
+        ${sideHtml}
+      </div>
+    </div>`;
+  }));
+  tEl.innerHTML=capHtmls.join('');
+
+  // Draw banner thumbnails
+  await new Promise(r=>setTimeout(r,50));
+  const canvases=document.querySelectorAll('[data-bid]');
+  for(const c of canvases){
+    const bid=c.getAttribute('data-bid');
+    const promo=c.getAttribute('data-promo');
+    const b=allActive.find(x=>x.id===bid);
+    if(!b)continue;
+    try{
+      const src=await CLOUD.get(K.img(bid));
+      if(!src)continue;
+      drawStamped(c,src,b,promo);
+    }catch(e){}
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// COPY IMAGE
+// ═══════════════════════════════════════════════════
+window.copyBannerImage=function(canvasId,btn){
+  const canvas=document.getElementById(canvasId);
+  if(!canvas||!canvas.width){showToast('Image not ready — try again in a moment');return;}
+  canvas.toBlob(blob=>{
+    if(!blob){showToast('Could not copy image');return;}
+    try{
+      const item=new ClipboardItem({'image/png':blob});
+      navigator.clipboard.write([item]).then(()=>{
+        btn.textContent='✓ Copied!';btn.classList.add('ok');
+        setTimeout(()=>{btn.textContent='🖼️ Copy Image';btn.classList.remove('ok');},2400);
+        showToast('Image copied!');
+      }).catch(()=>{const a=document.createElement('a');a.href=canvas.toDataURL();a.download='banner.png';a.click();showToast('Downloaded');});
+    }catch(e){const a=document.createElement('a');a.href=canvas.toDataURL();a.download='banner.png';a.click();showToast('Downloaded');}
+  },'image/png');
+};
+
+// ═══════════════════════════════════════════════════
+// DOWNLOAD BANNER
+// ═══════════════════════════════════════════════════
+window.dlBanner=async function(bannerId,promoCode){
+  showToast('Preparing download…');
+  const banners=await cGet(K.banners,[])||[];
+  const b=banners.find(x=>x.id===bannerId);
+  if(!b){showToast('Banner not found');return;}
+  const src=await CLOUD.get(K.img(bannerId));
+  if(!src){showToast('Image not found');return;}
+  const img=new Image();
+  img.onload=function(){
+    const c=document.createElement('canvas');c.width=img.width;c.height=img.height;
+    const ctx=c.getContext('2d');ctx.drawImage(img,0,0);stampCanvas(ctx,b,promoCode);
+    const a=document.createElement('a');a.download=`${(promoCode||bannerId).replace(/[^a-z0-9]/gi,'_')}.png`;a.href=c.toDataURL('image/png');a.click();
+  };
+  img.src=src;
+};
+
+// ═══════════════════════════════════════════════════
+// COPY TEXT
+// ═══════════════════════════════════════════════════
+window.doCopy=function(btn,enc){
+  const text=decodeURIComponent(enc);
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent='✓ Copied!';btn.classList.add('ok');
+    setTimeout(()=>{btn.textContent='📋 Copy Text';btn.classList.remove('ok');},2200);
+  });
+  showToast('Caption copied!');
+};
+
+// ═══════════════════════════════════════════════════
+// SELF REGISTRATION
+// ═══════════════════════════════════════════════════
+window.submitReg=async function(){
+  const id=document.getElementById('reg-id').value.trim();
+  const name=document.getElementById('reg-name').value.trim();
+  const promo=document.getElementById('reg-promo').value.trim();
+  const player=document.getElementById('reg-player').value.trim();
+  const apk=document.getElementById('reg-apk').value.trim();
+  const ios=document.getElementById('reg-ios').value.trim();
+  const lang=document.getElementById('reg-lang').value;
+
+  if(!id||!promo){setStatus('reg-status','err','❌ Affiliate ID and Promo Code are required.');return;}
+
+  const btn=document.querySelector('[onclick="submitReg()"]');
+  if(btn){btn.textContent='⏳ Submitting…';btn.disabled=true;}
+
+  try{
+    const affs=await cGet(K.affs,[])||[];
+    if(affs.find(a=>a.id.toLowerCase()===id.toLowerCase())){
+      setStatus('reg-status','err','❌ This Affiliate ID is already registered. Use Get My Materials to access your account.');return;
+    }
+    const regs=await cGet(K.regs,[])||[];
+    if(regs.find(r=>r.id.toLowerCase()===id.toLowerCase())){
+      setStatus('reg-status','warn','⏳ Your registration is already pending approval. Please wait.');return;
+    }
+    const reg={id,name,promoCode:promo,playerLink:player,apkLink:apk,iosLink:ios,lang,submittedAt:Date.now()};
+    regs.push(reg);
+    await CLOUD.set(K.regs,regs);
+    delete _c[K.regs];
+    setStatus('reg-status','ok',`✅ Registration submitted! Your ID "${id}" is pending admin approval. Once approved, just enter your ID in the "Get My Materials" tab — from any device.`);
+    ['reg-id','reg-name','reg-promo','reg-player','reg-apk','reg-ios'].forEach(f=>document.getElementById(f).value='');
+    showToast('Registration submitted!');
+  }catch(e){
+    setStatus('reg-status','err','❌ Error submitting: '+e.message+'. Please try again.');
+  }finally{
+    if(btn){btn.textContent='📤 SUBMIT REGISTRATION';btn.disabled=false;}
+  }
+};
+
+// ═══════════════════════════════════════════════════
+// URL AUTO-FILL
+// ═══════════════════════════════════════════════════
+(async function(){
+  const params=new URLSearchParams(window.location.search);
+  const affParam=params.get('aff');
+  if(affParam){
+    document.getElementById('affIn').value=affParam;
+    setTimeout(async()=>{
+      const affs=await cGet(K.affs,[])||[];
+      const aff=affs.find(a=>a.id.toLowerCase()===affParam.toLowerCase());
+      if(aff)await renderResults(aff,document.getElementById('langSelect').value);
+    },600);
+  }
+})();
+
+// ═══════════════════════════════════════════════════
+// FILL TEXT
+// ═══════════════════════════════════════════════════
+function fillText(t,aff){
+  return t
+    .replace(/\{\{Player link\}\}/gi,aff.playerLink||'')
+    .replace(/\{\{apk link\}\}/gi,aff.apkLink||'')
+    .replace(/\{\{iOS link\}\}/gi,aff.iosLink||'')
+    .replace(/\{\{Promo code\}\}/gi,aff.promoCode||'');
+}
+
+// ═══════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════
+function eh(s){const d=document.createElement('div');d.textContent=String(s||'');return d.innerHTML;}
+function trunc(s,n){return s&&s.length>n?s.slice(0,n)+'…':s;}
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');
+  clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('on'),2500);
+}
+
+})(); // IIFE end
+
+function goAdmin(){window.location.href='admin.html';}
+</script>
+</body>
+</html>
