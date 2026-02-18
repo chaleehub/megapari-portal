@@ -1,0 +1,68 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Panel</title>
+<meta charset="UTF-8"/>
+</head>
+<body>
+<h2>Admin Database Panel</h2>
+
+<h3>Add Affiliate</h3>
+<input id="aff_id" placeholder="Affiliate ID"><br>
+<input id="aff_name" placeholder="Name"><br>
+<input id="aff_promo" placeholder="Promo Code"><br>
+<button onclick="saveAffiliate()">Save Affiliate</button>
+
+<h3>Add Post Caption</h3>
+<textarea id="caption_text" placeholder="Caption"></textarea><br>
+<button onclick="saveCaption()">Save Caption</button>
+
+<h3>Add Banner</h3>
+<input id="banner_url" placeholder="Banner Image URL"><br>
+<button onclick="saveBanner()">Save Banner</button>
+
+<hr>
+<h3>Stored Data</h3>
+<button onclick="loadAll()">Refresh Data</button>
+<pre id="output"></pre>
+
+<script type="module">
+import { db, collection, addDoc, getDocs } from './firebase.js';
+
+window.saveAffiliate = async function() {
+  await addDoc(collection(db, "affiliates"), {
+    id: aff_id.value,
+    name: aff_name.value,
+    promo: aff_promo.value
+  });
+  alert("Affiliate saved");
+};
+
+window.saveCaption = async function() {
+  await addDoc(collection(db, "captions"), {
+    text: caption_text.value
+  });
+  alert("Caption saved");
+};
+
+window.saveBanner = async function() {
+  await addDoc(collection(db, "banners"), {
+    url: banner_url.value
+  });
+  alert("Banner saved");
+};
+
+window.loadAll = async function() {
+  let result = "";
+  const cols = ["affiliates","captions","banners"];
+  for (let c of cols){
+    const snap = await getDocs(collection(db, c));
+    result += "\n--- " + c.toUpperCase() + " ---\n";
+    snap.forEach(doc => result += JSON.stringify(doc.data(), null, 2) + "\n");
+  }
+  output.textContent = result;
+};
+</script>
+</body>
+</html>
