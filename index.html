@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Megapari Affiliate Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800&family=Anton&family=Russo+One&family=Teko:wght@600;700&family=Barlow+Condensed:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ac:#e53935;--ac2:#c62828;--dark:#0a0a0f;
+  --card:#12121a;--card2:#1a1a26;--border:rgba(229,57,53,0.18);
+  --text:#f0f0f8;--muted:#8888aa;--blue:#5c9fd4;--blue2:#82b1ff;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--dark);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse 70% 50% at 5% 10%,rgba(229,57,53,0.07) 0%,transparent 55%),
+             radial-gradient(ellipse 50% 40% at 95% 90%,rgba(92,159,212,0.05) 0%,transparent 50%);
+  pointer-events:none;z-index:0;}
+.container{position:relative;z-index:1;max-width:940px;margin:0 auto;padding:0 20px;}
+
+header{padding:22px 0 14px;border-bottom:1px solid var(--border);}
+.hdr-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.logo-link{text-decoration:none;cursor:pointer;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--ac);letter-spacing:3px;line-height:1;}
+.logo span{color:var(--text);}
+.portal-label{font-size:.62rem;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase;margin-top:2px;}
+
+.hero{padding:48px 0 32px;text-align:center;}
+.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.4rem,8vw,5rem);line-height:.95;letter-spacing:4px;}
+.hero h1 em{color:var(--ac);font-style:normal;display:block;}
+.hero p{margin:14px auto 32px;color:var(--muted);font-size:.92rem;max-width:440px;line-height:1.65;}
+
+.search-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;max-width:500px;margin:0 auto 28px;box-shadow:0 8px 32px rgba(0,0,0,.4);}
+.fl{display:block;font-size:.67rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);font-weight:600;margin-bottom:7px;}
+.search-box select,.search-box input[type=text]{
+  width:100%;background:#0d0d15;border:1px solid var(--border);border-radius:8px;
+  color:var(--text);padding:11px 14px;font-family:'Outfit',sans-serif;font-size:.92rem;
+  outline:none;transition:border-color .2s;margin-bottom:12px;
+}
+.search-box select:focus,.search-box input:focus{border-color:var(--ac);}
+.btn-s{width:100%;padding:13px;background:var(--ac);color:#fff;border:none;border-radius:8px;font-family:'Outfit',sans-serif;font-size:.94rem;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all .2s;}
+.btn-s:hover{background:var(--ac2);transform:translateY(-1px);}
+
+#results{padding:6px 0 60px;display:none;}
+
+.aff-hdr{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:15px 20px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.aff-badge{background:rgba(229,57,53,.12);border:1px solid rgba(229,57,53,.3);border-radius:6px;padding:3px 10px;font-size:.68rem;color:var(--ac);font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+.aff-name{font-size:1rem;font-weight:600;}
+.promo-chip{background:#1a0d0d;padding:5px 14px;border-radius:20px;font-size:.85rem;color:var(--ac);font-weight:800;letter-spacing:1.5px;margin-left:auto;border:1px solid rgba(229,57,53,.25);}
+
+.links-bar{display:flex;gap:9px;flex-wrap:wrap;padding:13px 17px;background:var(--card2);border:1px solid var(--border);border-radius:12px;margin-bottom:20px;}
+.li{display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px;}
+.li label{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;}
+.li a{font-size:.75rem;color:var(--blue);word-break:break-all;text-decoration:none;}
+.li a:hover{text-decoration:underline;}
+.li span{font-size:.85rem;color:var(--ac);font-weight:800;letter-spacing:1px;}
+
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;color:var(--muted);margin:24px 0 11px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+
+.banner-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:13px;}
+.banner-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s,transform .18s;}
+.banner-card:hover{border-color:var(--ac);transform:translateY(-2px);}
+.banner-img{width:100%;background:#0a0a0f;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:80px;}
+.banner-img canvas{display:block;width:100%;height:auto;}
+.banner-img .loading{color:var(--muted);font-size:.75rem;padding:20px;}
+.banner-meta{padding:10px 13px;}
+.banner-date{font-size:.66rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.btn-dl{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;margin-top:8px;padding:8px;background:rgba(229,57,53,.08);border:1px solid rgba(229,57,53,.25);border-radius:6px;color:var(--ac);font-size:.75rem;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:1px;text-transform:uppercase;}
+.btn-dl:hover{background:rgba(229,57,53,.18);border-color:var(--ac);}
+
+.cap-pair{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:13px;overflow:hidden;}
+.cap-top{display:flex;align-items:center;justify-content:space-between;padding:9px 17px 0;flex-wrap:wrap;gap:8px;}
+.cap-num{font-size:.63rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;}
+.copy-btn{background:rgba(229,57,53,.08);border:1px solid rgba(229,57,53,.2);border-radius:5px;padding:3px 11px;font-size:.67rem;color:var(--ac);cursor:pointer;transition:all .18s;letter-spacing:1px;text-transform:uppercase;font-family:'Outfit',sans-serif;font-weight:700;}
+.copy-btn:hover{background:rgba(229,57,53,.18);}
+.copy-btn.ok{background:var(--ac);color:#fff;border-color:var(--ac);}
+.cap-body{display:grid;grid-template-columns:1fr auto;gap:0;}
+.cap-text-wrap{padding:12px 17px;white-space:pre-wrap;font-size:.86rem;line-height:1.75;}
+.cap-banner-side{width:130px;flex-shrink:0;background:#0a0a0f;display:flex;align-items:center;justify-content:center;border-left:1px solid var(--border);}
+.cap-banner-side canvas{display:block;max-width:100%;max-height:90px;}
+.cap-no-banner{display:none;}
+
+.empty{text-align:center;padding:34px;color:var(--muted);}
+.empty .ei{font-size:2.2rem;margin-bottom:8px;opacity:.4;}
+
+/* Hidden admin access — invisible, position fixed bottom right */
+#admin-access{position:fixed;bottom:0;right:0;width:36px;height:36px;cursor:pointer;z-index:50;opacity:0;}
+#admin-access:hover{opacity:0;}
+
+#toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ac);color:#fff;padding:9px 22px;border-radius:30px;font-weight:700;font-size:.8rem;transition:transform .28s;z-index:999;pointer-events:none;white-space:nowrap;}
+#toast.on{transform:translateX(-50%) translateY(0);}
+
+@media(max-width:600px){
+  .aff-hdr{flex-direction:column;align-items:flex-start;}
+  .promo-chip{margin-left:0;}
+  .cap-body{grid-template-columns:1fr;}
+  .cap-banner-side{width:100%;height:70px;border-left:none;border-top:1px solid var(--border);}
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="hdr-inner">
+      <!-- Clicking logo goes to home (reloads page) -->
+      <a class="logo-link" href="index.html">
+        <div class="logo">MEGA<span>PARI</span></div>
+        <div class="portal-label">Affiliate Materials Portal</div>
+      </a>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>YOUR <em>PROMO</em> TOOLKIT</h1>
+    <p>Enter your Affiliate ID to access personalised banners, post captions, and referral links.</p>
+    <div class="search-box">
+      <label class="fl">Select Your Language</label>
+      <select id="langSelect">
+        <option value="en">🇬🇧 English</option>
+        <option value="fr">🇫🇷 French</option>
+        <option value="ar">🇸🇦 Arabic</option>
+        <option value="es">🇪🇸 Spanish</option>
+        <option value="pt">🇧🇷 Portuguese</option>
+      </select>
+      <label class="fl">Your Affiliate ID</label>
+      <input type="text" id="affIn" placeholder="e.g. AFF12345" onkeydown="if(event.key==='Enter')doSearch()"/>
+      <button class="btn-s" onclick="doSearch()">🔍 GET MY MATERIALS</button>
+    </div>
+  </section>
+
+  <section id="results">
+    <div class="aff-hdr">
+      <span class="aff-badge">✓ Verified</span>
+      <span class="aff-name" id="r-name">—</span>
+      <span class="promo-chip" id="r-promo">CODE: —</span>
+    </div>
+    <div class="links-bar" id="r-links"></div>
+    <div id="dated-sec"><div class="sec-title">📅 DATED BANNERS</div><div class="banner-grid" id="dated-grid"></div></div>
+    <div id="ev-sec"><div class="sec-title">♾️ EVERGREEN BANNERS</div><div class="banner-grid" id="ev-grid"></div></div>
+    <div id="txt-sec"><div class="sec-title">✍️ POST CAPTIONS</div><div id="txt-list"></div></div>
+  </section>
+</div>
+
+<!-- Hidden admin access: invisible 36×36 area bottom-right corner -->
+<!-- To access admin: click the bottom-right corner of the page -->
+<div id="admin-access" title="" onclick="goAdmin()"></div>
+
+<div id="toast">Copied!</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// SECURITY: Data is retrieved from IndexedDB and localStorage
+// but never exposed as plain variables in the global scope.
+// Affiliate lookup happens inside a closure.
+// ═══════════════════════════════════════════════════
+
+// Wrap everything in an IIFE to prevent global variable access via console
+(function(){
+  'use strict';
+
+  // ── IDB ──
+  const IDB_NAME='megapari_v2',IDB_VER=1,IDB_STORE='banner_images';
+  let _db=null;
+  function openDB(){
+    return new Promise((res,rej)=>{
+      if(_db){res(_db);return;}
+      const req=indexedDB.open(IDB_NAME,IDB_VER);
+      req.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains(IDB_STORE))d.createObjectStore(IDB_STORE);};
+      req.onsuccess=e=>{_db=e.target.result;res(_db);};
+      req.onerror=e=>rej(e.target.error);
+    });
+  }
+  function idbGet(key){
+    return openDB().then(db=>new Promise((res,rej)=>{
+      const req=db.transaction(IDB_STORE,'readonly').objectStore(IDB_STORE).get(key);
+      req.onsuccess=()=>res(req.result);req.onerror=e=>rej(e.target.error);
+    }));
+  }
+
+  // ── Data access (no global exposure) ──
+  function _gd(k){try{const v=JSON.parse(localStorage.getItem(k));return v||[];}catch(e){return[];}}
+  // Returns a COPY so callers can't mutate stored data
+  function getAffs(){return JSON.parse(JSON.stringify(_gd('affiliates')));}
+  function getBanners(){return JSON.parse(JSON.stringify(_gd('banners')));}
+  function getTexts(){return JSON.parse(JSON.stringify(_gd('texts')));}
+
+  // ── Clean expired banners from display ──
+  function isActive(b){
+    if(b.evergreen)return true;
+    if(!b.endDate)return true;
+    const end=new Date(b.endDate);end.setHours(23,59,59);
+    return end>=new Date();
+  }
+
+  // ── Search ──
+  window.doSearch=function(){
+    const id=document.getElementById('affIn').value.trim();
+    const lang=document.getElementById('langSelect').value;
+    if(!id){showToast('Enter your Affiliate ID');return;}
+    const affs=getAffs();
+    // Case-insensitive match
+    const aff=affs.find(a=>a.id.toLowerCase()===id.toLowerCase());
+    if(!aff){alert('Affiliate ID not found. Please contact your manager.');return;}
+    renderResults(aff,lang);
+  };
+
+  async function renderResults(aff,lang){
+    // Affiliate header
+    document.getElementById('r-name').textContent=aff.name||aff.id;
+    document.getElementById('r-promo').textContent='CODE: '+(aff.promoCode||'—');
+
+    document.getElementById('r-links').innerHTML=`
+      <div class="li"><label>Affiliate ID</label><span style="color:var(--text);font-weight:600">${eh(aff.id)}</span></div>
+      <div class="li"><label>Player Link</label>${aff.playerLink?`<a href="${eh(aff.playerLink)}" target="_blank">${eh(aff.playerLink)}</a>`:'<span style="color:var(--muted)">—</span>'}</div>
+      <div class="li"><label>Android APK</label>${aff.apkLink?`<a href="${eh(aff.apkLink)}" target="_blank">${eh(aff.apkLink)}</a>`:'<span style="color:var(--muted)">—</span>'}</div>
+      <div class="li"><label>iOS App</label>${aff.iosLink?`<a href="${eh(aff.iosLink)}" target="_blank">${eh(aff.iosLink)}</a>`:'<span style="color:var(--muted)">—</span>'}</div>
+      <div class="li"><label>Promo Code</label><span>${eh(aff.promoCode||'—')}</span></div>`;
+
+    const allBanners=getBanners().filter(isActive);
+    // Match banners to affiliate's language
+    const affLang=aff.lang||lang;
+    const dated=allBanners.filter(b=>!b.evergreen&&b.lang===affLang);
+    const ev=allBanners.filter(b=>b.evergreen&&b.lang===affLang);
+    const texts=getTexts().filter(t=>t.lang===affLang);
+
+    await renderBannerGrid('dated-grid',dated,aff,'No dated banners available');
+    await renderBannerGrid('ev-grid',ev,aff,'No evergreen banners available');
+
+    // Captions
+    const tEl=document.getElementById('txt-list');
+    if(!texts.length){
+      tEl.innerHTML='<div class="empty"><div class="ei">✍️</div><p>No captions available</p></div>';
+    } else {
+      const allBannersForText=getBanners().filter(isActive);
+      const capHtmls=await Promise.all(texts.map(async(t,i)=>{
+        const filled=fillText(t.content,aff);
+        const enc=encodeURIComponent(filled);
+        // Find assigned banner
+        const assignedB=allBannersForText.find(b=>b.assignedTextId===t.id&&b.lang===affLang);
+        let sideHtml='<div class="cap-no-banner"></div>';
+        if(assignedB){
+          try{
+            const src=await idbGet(assignedB.id);
+            if(src){
+              const dateLabel=assignedB.evergreen?'Evergreen':(assignedB.startDate+' – '+assignedB.endDate);
+              sideHtml=`<div class="cap-banner-side"><canvas id="cbc-${assignedB.id}-${i}" data-bid="${assignedB.id}" data-promo="${eh(aff.promoCode)}"></canvas></div>`;
+            }
+          }catch(e){}
+        }
+        return`<div class="cap-pair">
+          <div class="cap-top">
+            <span class="cap-num">Caption ${i+1}</span>
+            <button class="copy-btn" onclick="doCopy(this,'${enc}')">Copy</button>
+          </div>
+          <div class="cap-body" style="grid-template-columns:${assignedB?'1fr auto':'1fr'}">
+            <div class="cap-text-wrap">${eh(filled)}</div>
+            ${sideHtml}
+          </div>
+        </div>`;
+      }));
+      tEl.innerHTML=capHtmls.join('');
+
+      // Draw thumbnails with promo code
+      await new Promise(r=>setTimeout(r,60));
+      const canvases=document.querySelectorAll('[data-bid]');
+      for(const c of canvases){
+        const bid=c.getAttribute('data-bid');
+        const promo=c.getAttribute('data-promo');
+        const b=allBannersForText.find(x=>x.id===bid);
+        if(!b)continue;
+        try{
+          const src=await idbGet(bid);
+          if(!src)continue;
+          drawStamped(c,src,b,promo);
+        }catch(e){}
+      }
+    }
+
+    const res=document.getElementById('results');
+    res.style.display='block';
+    res.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  async function renderBannerGrid(gridId,banners,aff,emptyMsg){
+    const grid=document.getElementById(gridId);
+    if(!banners.length){
+      grid.innerHTML=`<div class="empty"><div class="ei">🖼️</div><p>${emptyMsg}</p></div>`;
+      return;
+    }
+    // Build HTML first (with loading placeholders)
+    grid.innerHTML=banners.map(b=>`
+      <div class="banner-card">
+        <div class="banner-img" id="bi-${b.id}"><div class="loading">Loading…</div></div>
+        <div class="banner-meta">
+          <div class="banner-date">${b.evergreen?'Evergreen':(b.startDate+' – '+b.endDate)}</div>
+          <button class="btn-dl" onclick="dlBanner('${b.id}','${eh(aff.promoCode)}')">⬇ Download</button>
+        </div>
+      </div>`).join('');
+
+    // Then load images async
+    for(const b of banners){
+      const wrap=document.getElementById('bi-'+b.id);
+      if(!wrap)continue;
+      try{
+        const src=await idbGet(b.id);
+        if(!src){wrap.innerHTML='<div class="loading" style="padding:20px">No image</div>';continue;}
+        wrap.innerHTML='';
+        const canvas=document.createElement('canvas');
+        wrap.appendChild(canvas);
+        drawStamped(canvas,src,b,aff.promoCode);
+      }catch(e){wrap.innerHTML='<div class="loading">Error</div>';}
+    }
+  }
+
+  function drawStamped(canvas,imgSrc,banner,promoCode){
+    const img=new Image();
+    img.onload=function(){
+      canvas.width=img.width;
+      canvas.height=img.height;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0);
+      // Stamp promo code
+      if(banner.promoConfig&&promoCode){
+        const pc=banner.promoConfig;
+        ctx.save();
+        ctx.beginPath();ctx.rect(pc.x,pc.y,pc.w,pc.h);ctx.clip();
+        const ff=pc.font?`'${pc.font}'`:'Arial Black';
+        ctx.font=`bold ${pc.size||pc.fontSize||36}px ${ff},Arial,sans-serif`;
+        ctx.fillStyle=pc.color||'#ffffff';
+        const align=pc.align||'center';
+        ctx.textAlign=align;ctx.textBaseline='middle';
+        const tx=align==='center'?pc.x+(pc.w/2):align==='left'?pc.x+4:pc.x+pc.w-4;
+        ctx.fillText(promoCode,tx,pc.y+(pc.h/2),pc.w);
+        ctx.restore();
+      }
+    };
+    img.src=imgSrc;
+  }
+
+  window.dlBanner=function(bannerId,promoCode){
+    const banners=getBanners();
+    const b=banners.find(x=>x.id===bannerId);
+    if(!b)return;
+    idbGet(bannerId).then(src=>{
+      if(!src){showToast('Image not found');return;}
+      const img=new Image();
+      img.onload=function(){
+        const c=document.createElement('canvas');
+        c.width=img.width;c.height=img.height;
+        const ctx=c.getContext('2d');ctx.drawImage(img,0,0);
+        if(b.promoConfig&&promoCode){
+          const pc=b.promoConfig;
+          ctx.save();
+          ctx.beginPath();ctx.rect(pc.x,pc.y,pc.w,pc.h);ctx.clip();
+          const ff=pc.font?`'${pc.font}'`:'Arial Black';
+          ctx.font=`bold ${pc.size||pc.fontSize||36}px ${ff},Arial,sans-serif`;
+          ctx.fillStyle=pc.color||'#ffffff';
+          const align=pc.align||'center';
+          ctx.textAlign=align;ctx.textBaseline='middle';
+          const tx=align==='center'?pc.x+(pc.w/2):align==='left'?pc.x+4:pc.x+pc.w-4;
+          ctx.fillText(promoCode,tx,pc.y+(pc.h/2),pc.w);
+          ctx.restore();
+        }
+        const a=document.createElement('a');
+        a.download=`${(promoCode||bannerId).replace(/[^a-z0-9]/gi,'_')}.png`;
+        a.href=c.toDataURL('image/png');a.click();
+      };
+      img.src=src;
+    }).catch(()=>showToast('Download error'));
+    showToast('Preparing download…');
+  };
+
+  function fillText(t,aff){
+    return t
+      .replace(/\{\{Player link\}\}/gi,aff.playerLink||'')
+      .replace(/\{\{apk link\}\}/gi,aff.apkLink||'')
+      .replace(/\{\{iOS link\}\}/gi,aff.iosLink||'')
+      .replace(/\{\{Promo code\}\}/gi,aff.promoCode||'');
+  }
+
+  window.doCopy=function(btn,enc){
+    const text=decodeURIComponent(enc);
+    navigator.clipboard.writeText(text).then(()=>{
+      btn.textContent='✓ Copied';btn.classList.add('ok');
+      setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('ok');},2200);
+    });
+    showToast('Caption copied!');
+  };
+
+  function eh(s){const d=document.createElement('div');d.textContent=String(s||'');return d.innerHTML;}
+  function showToast(msg){
+    const t=document.getElementById('toast');
+    t.textContent=msg;t.classList.add('on');
+    setTimeout(()=>t.classList.remove('on'),2400);
+  }
+
+  // Ensure default texts
+  (function(){
+    const t=localStorage.getItem('texts');
+    if(!t||JSON.parse(t).length===0){
+      const defs=[
+        {id:'e1',lang:'en',content:"⚽🔥 BIG MATCH ENERGY STARTS HERE!\n🎯 Register: {{Player link}}\n📲 APK: {{apk link}}\n🍏 iOS: {{iOS link}}\n🎁 Code: {{Promo code}}"},
+        {id:'e2',lang:'en',content:"Smart bettors use the right platform.\n👉 Join: {{Player link}}\n📥 Android: {{apk link}}\n📱 iOS: {{iOS link}}\n💰 Code: {{Promo code}}"},
+        {id:'e3',lang:'en',content:"🚨 TODAY'S GAMES = TODAY'S PROFITS\n🔗 Register: {{Player link}}\n📲 APK: {{apk link}}\n🍏 iOS: {{iOS link}}\n🎁 Code: {{Promo code}}"},
+        {id:'e4',lang:'en',content:"Winning community growing daily ⚽\nStart: {{Player link}}\nAndroid: {{apk link}}\niOS: {{iOS link}}\nCode: {{Promo code}}"},
+        {id:'e5',lang:'en',content:"Trusted odds. Fast payouts.\nRegister: {{Player link}}\nAPK: {{apk link}}\niOS: {{iOS link}}\nCode: {{Promo code}}"},
+        {id:'e6',lang:'en',content:"Weekend football with money on the line 😎\nSign up: {{Player link}}\nAndroid: {{apk link}}\niOS: {{iOS link}}\nCode: {{Promo code}}"},
+        {id:'e7',lang:'en',content:"🎁 Bonus unlocked. Just register.\n👉 Register: {{Player link}}\n📲 APK: {{apk link}}\n🍏 iOS: {{iOS link}}\nCode: {{Promo code}}"},
+        {id:'f1',lang:'fr',content:"⚽🔥 MATCHS DE RÊVE = PROFITS RÉELS!\n🎯 Inscription: {{Player link}}\n📲 APK: {{apk link}}\n🍏 iOS: {{iOS link}}\n🎁 Code: {{Promo code}}"},
+        {id:'f2',lang:'fr',content:"Les parieurs intelligents choisissent Megapari.\n👉 Rejoignez: {{Player link}}\n📥 Android: {{apk link}}\n📱 iOS: {{iOS link}}\n💰 Code: {{Promo code}}"},
+        {id:'f3',lang:'fr',content:"🚨 MATCHS D'AUJOURD'HUI = PROFITS D'AUJOURD'HUI\n🔗 S'inscrire: {{Player link}}\n📲 APK: {{apk link}}\n🍏 iOS: {{iOS link}}\n🎁 Code: {{Promo code}}"},
+        {id:'f4',lang:'fr',content:"Communauté gagnante en pleine croissance ⚽\nCommencez: {{Player link}}\nAndroid: {{apk link}}\niOS: {{iOS link}}\nCode: {{Promo code}}"},
+        {id:'f5',lang:'fr',content:"Cotes fiables. Paiements rapides.\nS'inscrire: {{Player link}}\nAPK: {{apk link}}\niOS: {{iOS link}}\nCode: {{Promo code}}"},
+        {id:'f6',lang:'fr',content:"Football du week-end avec des gains en jeu 😎\nS'inscrire: {{Player link}}\nAndroid: {{apk link}}\niOS: {{iOS link}}\nCode: {{Promo code}}"},
+        {id:'f7',lang:'fr',content:"🎁 Bonus débloqué. Inscrivez-vous.\n👉 S'inscrire: {{Player link}}\n📲 APK: {{apk link}}\n🍏 iOS: {{iOS link}}\nCode: {{Promo code}}"},
+        {id:'a1',lang:'ar',content:"⚽🔥 طاقة المباريات الكبيرة!\n🎯 سجّل: {{Player link}}\n📲 أندرويد: {{apk link}}\n🍏 iOS: {{iOS link}}\n🎁 كود: {{Promo code}}"},
+        {id:'a2',lang:'ar',content:"المراهنون الأذكياء يختارون Megapari.\n👉 انضم: {{Player link}}\n📥 أندرويد: {{apk link}}\n📱 iOS: {{iOS link}}\n💰 كود: {{Promo code}}"},
+        {id:'a3',lang:'ar',content:"🚨 مباريات اليوم = أرباح اليوم!\n🔗 سجّل: {{Player link}}\n📲 APK: {{apk link}}\n🍏 iOS: {{iOS link}}\n🎁 كود: {{Promo code}}"},
+        {id:'a4',lang:'ar',content:"مجتمع فائز متنامٍ ⚽\nابدأ: {{Player link}}\nأندرويد: {{apk link}}\niOS: {{iOS link}}\nكود: {{Promo code}}"},
+        {id:'a5',lang:'ar',content:"أوضاع موثوقة. مدفوعات سريعة.\nسجّل: {{Player link}}\nAPK: {{apk link}}\niOS: {{iOS link}}\nكود: {{Promo code}}"},
+        {id:'a6',lang:'ar',content:"كرة قدم نهاية الأسبوع مع أموال على المحك 😎\nسجّل: {{Player link}}\nأندرويد: {{apk link}}\niOS: {{iOS link}}\nكود: {{Promo code}}"},
+        {id:'a7',lang:'ar',content:"🎁 مكافأة متاحة. سجّل الآن.\n👉 سجّل: {{Player link}}\n📲 APK: {{apk link}}\n🍏 iOS: {{iOS link}}\nكود: {{Promo code}}"},
+        {id:'s1',lang:'es',content:"⚽🔥 ¡GRANDES PARTIDOS = GRANDES GANANCIAS!\n🎯 Regístrate: {{Player link}}\n📲 APK: {{apk link}}\n🍏 iOS: {{iOS link}}\n🎁 Código: {{Promo code}}"},
+        {id:'s2',lang:'es',content:"Los apostadores inteligentes eligen Megapari.\n👉 Únete: {{Player link}}\n📥 Android: {{apk link}}\n📱 iOS: {{iOS link}}\n💰 Código: {{Promo code}}"},
+        {id:'s3',lang:'es',content:"🚨 PARTIDOS DE HOY = GANANCIAS DE HOY\n🔗 Registro: {{Player link}}\n📲 APK: {{apk link}}\n🍏 iOS: {{iOS link}}\n🎁 Código: {{Promo code}}"},
+        {id:'s4',lang:'es',content:"Comunidad ganadora creciendo ⚽\nEmpieza: {{Player link}}\nAndroid: {{apk link}}\niOS: {{iOS link}}\nCódigo: {{Promo code}}"},
+        {id:'s5',lang:'es',content:"Cuotas confiables. Pagos rápidos.\nRegístrate: {{Player link}}\nAPK: {{apk link}}\niOS: {{iOS link}}\nCódigo: {{Promo code}}"},
+        {id:'s6',lang:'es',content:"Fútbol de fin de semana con dinero en juego 😎\nRegístrate: {{Player link}}\nAndroid: {{apk link}}\niOS: {{iOS link}}\nCódigo: {{Promo code}}"},
+        {id:'s7',lang:'es',content:"🎁 Bono disponible. Solo regístrate.\n👉 Regístrate: {{Player link}}\n📲 APK: {{apk link}}\n🍏 iOS: {{iOS link}}\nCódigo: {{Promo code}}"},
+        {id:'p1',lang:'pt',content:"⚽🔥 GRANDES JOGOS = GRANDES LUCROS!\n🎯 Registre-se: {{Player link}}\n📲 APK: {{apk link}}\n🍏 iOS: {{iOS link}}\n🎁 Código: {{Promo code}}"},
+        {id:'p2',lang:'pt',content:"Apostadores inteligentes escolhem Megapari.\n👉 Junte-se: {{Player link}}\n📥 Android: {{apk link}}\n📱 iOS: {{iOS link}}\n💰 Código: {{Promo code}}"},
+        {id:'p3',lang:'pt',content:"🚨 JOGOS DE HOJE = LUCROS DE HOJE\n🔗 Registro: {{Player link}}\n📲 APK: {{apk link}}\n🍏 iOS: {{iOS link}}\n🎁 Código: {{Promo code}}"},
+        {id:'p4',lang:'pt',content:"Comunidade vencedora crescendo ⚽\nComece: {{Player link}}\nAndroid: {{apk link}}\niOS: {{iOS link}}\nCódigo: {{Promo code}}"},
+        {id:'p5',lang:'pt',content:"Odds confiáveis. Pagamentos rápidos.\nRegistre-se: {{Player link}}\nAPK: {{apk link}}\niOS: {{iOS link}}\nCódigo: {{Promo code}}"},
+        {id:'p6',lang:'pt',content:"Futebol de fim de semana com dinheiro em jogo 😎\nRegistre-se: {{Player link}}\nAndroid: {{apk link}}\niOS: {{iOS link}}\nCódigo: {{Promo code}}"},
+        {id:'p7',lang:'pt',content:"🎁 Bônus disponível. Só registre.\n👉 Registro: {{Player link}}\n📲 APK: {{apk link}}\n🍏 iOS: {{iOS link}}\nCódigo: {{Promo code}}"},
+      ];
+      localStorage.setItem('texts',JSON.stringify(defs));
+    }
+  })();
+
+})(); // end IIFE
+
+// Admin access — only exposed as global because it needs to be called from onclick
+// The admin URL itself is not shown anywhere on the page
+function goAdmin(){
+  // Admin page access — navigate to admin panel
+  window.location.href='admin.html';
+}
+</script>
+</body>
+</html>
