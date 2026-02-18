@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Megapari Affiliate Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #00e676;
+    --green2: #00c853;
+    --dark: #080c0a;
+    --dark2: #0d1410;
+    --card: #111a14;
+    --card2: #162019;
+    --border: rgba(0,230,118,0.15);
+    --text: #e8f5e9;
+    --muted: #7a9e85;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--dark);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;overflow-x:hidden;}
+
+  /* BG texture */
+  body::before{
+    content:'';position:fixed;inset:0;
+    background:radial-gradient(ellipse at 20% 20%,rgba(0,230,118,0.06) 0%,transparent 50%),
+               radial-gradient(ellipse at 80% 80%,rgba(0,200,83,0.04) 0%,transparent 50%);
+    pointer-events:none;z-index:0;
+  }
+
+  .container{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:0 20px;}
+
+  /* HEADER */
+  header{padding:30px 0 20px;border-bottom:1px solid var(--border);}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;color:var(--green);letter-spacing:3px;}
+  .logo span{color:var(--text);}
+  .tagline{font-size:.8rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:2px;}
+
+  /* HERO SEARCH */
+  .hero{padding:60px 0 40px;text-align:center;}
+  .hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.5rem,8vw,5rem);line-height:1;letter-spacing:4px;color:var(--text);}
+  .hero h1 em{color:var(--green);font-style:normal;}
+  .hero p{margin:16px 0 40px;color:var(--muted);font-size:1rem;max-width:500px;margin-left:auto;margin-right:auto;}
+
+  .search-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:30px;max-width:520px;margin:0 auto 30px;}
+  .search-box label{display:block;font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:10px;}
+  .lang-row{display:flex;gap:10px;margin-bottom:16px;}
+  .lang-row select, .search-box input{
+    width:100%;background:#0a1209;border:1px solid var(--border);border-radius:8px;
+    color:var(--text);padding:12px 16px;font-family:'Outfit',sans-serif;font-size:.95rem;outline:none;
+    transition:border-color .2s;
+  }
+  .lang-row select{flex:1;}
+  .search-box input:focus, .lang-row select:focus{border-color:var(--green);}
+  .btn-primary{
+    width:100%;padding:14px;background:var(--green);color:#000;border:none;border-radius:8px;
+    font-family:'Outfit',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;
+    letter-spacing:1px;text-transform:uppercase;transition:all .2s;margin-top:6px;
+  }
+  .btn-primary:hover{background:var(--green2);transform:translateY(-1px);}
+  .btn-primary:active{transform:translateY(0);}
+
+  /* RESULTS */
+  #results{padding:20px 0 60px;}
+  #results.hidden{display:none;}
+  .affiliate-header{
+    background:var(--card);border:1px solid var(--border);border-radius:12px;
+    padding:20px 24px;margin-bottom:30px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  }
+  .affiliate-header .badge{
+    background:rgba(0,230,118,0.1);border:1px solid var(--green);border-radius:6px;
+    padding:4px 12px;font-size:.75rem;color:var(--green);font-weight:600;letter-spacing:1px;text-transform:uppercase;
+  }
+  .affiliate-header h2{font-size:1.2rem;font-weight:600;}
+  .affiliate-header .promo-chip{
+    background:#1a2e1d;padding:6px 14px;border-radius:20px;font-size:.85rem;
+    color:var(--green);font-weight:700;letter-spacing:1px;margin-left:auto;
+  }
+
+  .section-title{
+    font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:3px;
+    color:var(--muted);margin:30px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--border);
+  }
+
+  /* BANNER GRID */
+  .banner-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+  .banner-card{
+    background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;
+    transition:border-color .2s,transform .2s;cursor:pointer;
+  }
+  .banner-card:hover{border-color:var(--green);transform:translateY(-3px);}
+  .banner-img-wrap{position:relative;width:100%;background:#0a1209;aspect-ratio:16/9;overflow:hidden;}
+  .banner-img-wrap img{width:100%;height:100%;object-fit:contain;}
+  .banner-img-wrap canvas{display:block;width:100%;height:auto;}
+  .banner-meta{padding:12px 14px;}
+  .banner-date{font-size:.7rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+  .banner-lang{font-size:.7rem;color:var(--green);margin-top:2px;}
+  .btn-dl{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    width:100%;margin-top:10px;padding:9px;background:rgba(0,230,118,0.1);
+    border:1px solid rgba(0,230,118,0.3);border-radius:6px;color:var(--green);
+    font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s;
+    letter-spacing:1px;text-transform:uppercase;
+  }
+  .btn-dl:hover{background:rgba(0,230,118,0.2);border-color:var(--green);}
+
+  /* TEXTS */
+  .text-list{display:flex;flex-direction:column;gap:14px;}
+  .text-card{
+    background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;
+    white-space:pre-wrap;font-size:.9rem;line-height:1.7;color:var(--text);position:relative;
+  }
+  .copy-btn{
+    position:absolute;top:12px;right:14px;background:rgba(0,230,118,0.1);border:1px solid var(--border);
+    border-radius:6px;padding:4px 10px;font-size:.72rem;color:var(--green);cursor:pointer;
+    transition:all .2s;letter-spacing:1px;text-transform:uppercase;
+  }
+  .copy-btn:hover{background:rgba(0,230,118,0.2);}
+  .copy-btn.copied{color:#fff;background:var(--green);border-color:var(--green);}
+
+  /* LINKS BAR */
+  .links-bar{
+    display:flex;gap:10px;flex-wrap:wrap;padding:16px 20px;
+    background:var(--card2);border:1px solid var(--border);border-radius:12px;margin-bottom:20px;
+  }
+  .link-item{display:flex;flex-direction:column;gap:3px;flex:1;min-width:180px;}
+  .link-item label{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;}
+  .link-item a{font-size:.8rem;color:var(--green);word-break:break-all;text-decoration:none;}
+  .link-item a:hover{text-decoration:underline;}
+
+  /* EVERGREEN */
+  .evergreen-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;}
+
+  /* EMPTY */
+  .empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+  .empty-state .icon{font-size:3rem;margin-bottom:12px;}
+
+  /* TOAST */
+  #toast{
+    position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);
+    background:var(--green);color:#000;padding:10px 22px;border-radius:30px;font-weight:700;
+    font-size:.85rem;transition:transform .3s;z-index:999;pointer-events:none;
+  }
+  #toast.show{transform:translateX(-50%) translateY(0);}
+
+  /* ADMIN LINK */
+  .admin-corner{position:fixed;bottom:18px;right:18px;z-index:10;}
+  .admin-corner a{
+    background:var(--card);border:1px solid var(--border);color:var(--muted);
+    text-decoration:none;padding:8px 16px;border-radius:8px;font-size:.75rem;
+    letter-spacing:1px;text-transform:uppercase;transition:all .2s;
+  }
+  .admin-corner a:hover{border-color:var(--green);color:var(--green);}
+
+  @media(max-width:600px){
+    .lang-row{flex-direction:column;}
+    .affiliate-header{flex-direction:column;align-items:flex-start;}
+    .affiliate-header .promo-chip{margin-left:0;}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">MEGA<span>PARI</span></div>
+    <div class="tagline">Affiliate Materials Portal</div>
+  </header>
+
+  <section class="hero">
+    <h1>YOUR<br><em>PROMO</em><br>TOOLKIT</h1>
+    <p>Enter your Affiliate ID to access your personalised banners, captions, and referral links.</p>
+
+    <div class="search-box">
+      <label>Preferred Language</label>
+      <div class="lang-row">
+        <select id="langSelect">
+          <option value="en">🇬🇧 English</option>
+          <option value="fr">🇫🇷 French</option>
+          <option value="ar">🇸🇦 Arabic</option>
+          <option value="es">🇪🇸 Spanish</option>
+          <option value="pt">🇧🇷 Portuguese</option>
+        </select>
+      </div>
+      <label>Affiliate ID</label>
+      <input type="text" id="affiliateInput" placeholder="e.g. AFF12345" />
+      <button class="btn-primary" onclick="searchAffiliate()">🔍 GET MY MATERIALS</button>
+    </div>
+  </section>
+
+  <section id="results" class="hidden">
+    <div class="affiliate-header">
+      <span class="badge">✓ Verified Affiliate</span>
+      <h2 id="res-name">Affiliate ID: —</h2>
+      <div class="promo-chip" id="res-promo">CODE: —</div>
+    </div>
+
+    <div class="links-bar" id="res-links"></div>
+
+    <div id="dated-section">
+      <div class="section-title">📅 DATED BANNERS</div>
+      <div class="banner-grid" id="dated-grid"></div>
+    </div>
+
+    <div id="evergreen-section">
+      <div class="section-title">♾️ EVERGREEN BANNERS</div>
+      <div class="evergreen-grid" id="evergreen-grid"></div>
+    </div>
+
+    <div id="texts-section">
+      <div class="section-title">✍️ POST CAPTIONS</div>
+      <div class="text-list" id="texts-list"></div>
+    </div>
+  </section>
+</div>
+
+<div id="toast">Copied!</div>
+<div class="admin-corner"><a href="admin.html">⚙ Admin</a></div>
+
+<script>
+// ═══════════════════════════════════════
+// DATA LAYER (localStorage)
+// ═══════════════════════════════════════
+function getData(key, def){ try{ return JSON.parse(localStorage.getItem(key))||def; }catch(e){ return def; } }
+function setData(key,val){ localStorage.setItem(key,JSON.stringify(val)); }
+
+const LANG_NAMES = {en:'English',fr:'French',ar:'Arabic',es:'Spanish',pt:'Portuguese'};
+
+// ═══════════════════════════════════════
+// SEARCH
+// ═══════════════════════════════════════
+function searchAffiliate(){
+  const id = document.getElementById('affiliateInput').value.trim();
+  const lang = document.getElementById('langSelect').value;
+  if(!id){ alert('Please enter your Affiliate ID'); return; }
+
+  const affiliates = getData('affiliates', []);
+  const aff = affiliates.find(a => a.id.toLowerCase() === id.toLowerCase());
+  if(!aff){ alert('Affiliate ID not found. Please contact your manager.'); return; }
+
+  renderResults(aff, lang);
+}
+
+document.getElementById('affiliateInput').addEventListener('keydown', e => {
+  if(e.key==='Enter') searchAffiliate();
+});
+
+// ═══════════════════════════════════════
+// RENDER RESULTS
+// ═══════════════════════════════════════
+function renderResults(aff, lang){
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  // Affiliate header
+  document.getElementById('res-name').textContent = `${aff.name || aff.id}`;
+  document.getElementById('res-promo').textContent = `CODE: ${aff.promoCode}`;
+
+  // Links bar
+  const lb = document.getElementById('res-links');
+  lb.innerHTML = `
+    <div class="link-item"><label>Player Link</label><a href="${aff.playerLink}" target="_blank">${aff.playerLink||'—'}</a></div>
+    <div class="link-item"><label>Android APK</label><a href="${aff.apkLink}" target="_blank">${aff.apkLink||'—'}</a></div>
+    <div class="link-item"><label>iOS App</label><a href="${aff.iosLink}" target="_blank">${aff.iosLink||'—'}</a></div>
+    <div class="link-item"><label>Promo Code</label><span style="color:var(--green);font-weight:700;font-size:.9rem">${aff.promoCode||'—'}</span></div>`;
+
+  // Auto-delete expired banners
+  cleanExpiredBanners();
+
+  // Dated banners
+  const banners = getData('banners', []);
+  const dated = banners.filter(b => !b.evergreen && b.lang === lang);
+  const dGrid = document.getElementById('dated-grid');
+  if(dated.length){
+    dGrid.innerHTML = dated.map(b => bannerCard(b, aff)).join('');
+  } else {
+    dGrid.innerHTML = `<div class="empty-state"><div class="icon">🖼️</div><p>No dated banners available for ${LANG_NAMES[lang]}</p></div>`;
+  }
+
+  // Evergreen banners
+  const ev = banners.filter(b => b.evergreen && b.lang === lang);
+  const evGrid = document.getElementById('evergreen-grid');
+  if(ev.length){
+    evGrid.innerHTML = ev.map(b => bannerCard(b, aff)).join('');
+  } else {
+    evGrid.innerHTML = `<div class="empty-state"><div class="icon">♾️</div><p>No evergreen banners for ${LANG_NAMES[lang]}</p></div>`;
+  }
+
+  // Texts
+  const allTexts = getData('texts', getDefaultTexts());
+  const langTexts = allTexts.filter(t => t.lang === lang);
+  const tList = document.getElementById('texts-list');
+
+  // Pick random texts (all available, shuffled)
+  const shuffled = [...langTexts].sort(() => Math.random()-0.5);
+  if(shuffled.length){
+    tList.innerHTML = shuffled.map((t,i) => {
+      const filled = fillText(t.content, aff);
+      return `<div class="text-card"><button class="copy-btn" onclick="copyText(this,'${encodeURIComponent(filled)}')">Copy</button>${escHtml(filled)}</div>`;
+    }).join('');
+  } else {
+    tList.innerHTML = `<div class="empty-state"><div class="icon">✍️</div><p>No captions for ${LANG_NAMES[lang]}</p></div>`;
+  }
+
+  document.getElementById('results').classList.remove('hidden');
+  document.getElementById('results').scrollIntoView({behavior:'smooth'});
+
+  // Render canvases after DOM insert
+  setTimeout(()=>{ dated.concat(ev).forEach(b => renderBannerCanvas(b, aff)); }, 50);
+}
+
+function bannerCard(b, aff){
+  const dateStr = b.evergreen ? 'Evergreen' : `${b.startDate} – ${b.endDate}`;
+  return `<div class="banner-card">
+    <div class="banner-img-wrap">
+      <canvas id="canvas-${b.id}" data-banner-id="${b.id}"></canvas>
+    </div>
+    <div class="banner-meta">
+      <div class="banner-date">${dateStr}</div>
+      <div class="banner-lang">${LANG_NAMES[b.lang]||b.lang}</div>
+      <button class="btn-dl" onclick="downloadBanner('${b.id}','${escAttr(aff.promoCode)}')">⬇ Download Banner</button>
+    </div>
+  </div>`;
+}
+
+function renderBannerCanvas(b, aff){
+  const canvas = document.getElementById('canvas-'+b.id);
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.onload = function(){
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img,0,0);
+    if(b.promoConfig && aff.promoCode){
+      const pc = b.promoConfig;
+      ctx.font = `bold ${pc.fontSize||28}px Arial`;
+      ctx.fillStyle = pc.color||'#ffffff';
+      ctx.textAlign = pc.align||'center';
+      // clip to region
+      ctx.save();
+      ctx.rect(pc.x, pc.y, pc.w, pc.h);
+      ctx.clip();
+      ctx.fillText(aff.promoCode, pc.x+(pc.w/2), pc.y+pc.h-6, pc.w);
+      ctx.restore();
+    }
+  };
+  img.src = b.imageData;
+}
+
+function downloadBanner(bannerId, promoCode){
+  const banners = getData('banners', []);
+  const b = banners.find(x=>x.id===bannerId);
+  if(!b) return;
+  const affiliates = getData('affiliates',[]);
+  const affId = document.getElementById('affiliateInput').value.trim();
+  const aff = affiliates.find(a=>a.id.toLowerCase()===affId.toLowerCase())||{promoCode};
+
+  const canvas = document.createElement('canvas');
+  const img = new Image();
+  img.onload = function(){
+    canvas.width=img.width; canvas.height=img.height;
+    const ctx=canvas.getContext('2d');
+    ctx.drawImage(img,0,0);
+    if(b.promoConfig && aff.promoCode){
+      const pc=b.promoConfig;
+      ctx.font=`bold ${pc.fontSize||28}px Arial`;
+      ctx.fillStyle=pc.color||'#ffffff';
+      ctx.textAlign='center';
+      ctx.save();
+      ctx.beginPath();ctx.rect(pc.x,pc.y,pc.w,pc.h);ctx.clip();
+      ctx.fillText(aff.promoCode,pc.x+(pc.w/2),pc.y+pc.h-6,pc.w);
+      ctx.restore();
+    }
+    const a=document.createElement('a');
+    a.download=`banner-${bannerId}.png`;
+    a.href=canvas.toDataURL('image/png');
+    a.click();
+  };
+  img.src=b.imageData;
+  showToast('Downloading...');
+}
+
+function fillText(text, aff){
+  return text
+    .replace(/\{\{Player link\}\}/gi, aff.playerLink||'')
+    .replace(/\{\{apk link\}\}/gi, aff.apkLink||'')
+    .replace(/\{\{iOS link\}\}/gi, aff.iosLink||'')
+    .replace(/\{\{Promo code\}\}/gi, aff.promoCode||'');
+}
+
+function copyText(btn, encoded){
+  const text = decodeURIComponent(encoded);
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent='✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied');},2000);
+  });
+  showToast('Caption copied!');
+}
+
+function cleanExpiredBanners(){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const banners = getData('banners',[]);
+  const active = banners.filter(b=>{
+    if(b.evergreen) return true;
+    const end = new Date(b.endDate); end.setHours(23,59,59);
+    return end >= today;
+  });
+  if(active.length !== banners.length) setData('banners', active);
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+function escHtml(s){ const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
+function escAttr(s){ return (s||'').replace(/'/g,"\\'"); }
+
+// DEFAULT TEXTS
+function getDefaultTexts(){
+  const en = [
+    {id:'e1',lang:'en',content:`⚽🔥 BIG MATCH ENERGY STARTS HERE!\nTurn every game into real winnings with Megapari. Odds are hot, payouts are fast, and the action never stops.\n🎯 Register now: {{Player link}}\n📲 Android APK: {{apk link}}\n🍏 iOS app: {{iOS link}}\n🎁 Use promo code: {{Promo code}}\nDon't just watch football — profit from it.`},
+    {id:'e2',lang:'en',content:`Smart bettors don't chase luck — they use the right platform.\nMegapari gives you competitive odds, live betting, and instant withdrawals so you stay ahead of the game.\n👉 Join here: {{Player link}}\n📥 Android: {{apk link}}\n📱 iOS: {{iOS link}}\n💰 Promo code: {{Promo code}}\nBet smarter. Win faster.`},
+    {id:'e3',lang:'en',content:`🚨 TODAY'S GAMES = TODAY'S PROFITS\nIf you're watching football without betting on Megapari, you're missing money.\nSign up now and activate your bonus instantly.\n🔗 Register: {{Player link}}\n📲 Download APK: {{apk link}}\n🍏 iOS: {{iOS link}}\n🎁 Promo code: {{Promo code}}\nDon't sit out the action.`},
+    {id:'e4',lang:'en',content:`Our winning community is growing daily ⚽💬\nJoin thousands of football fans turning predictions into cash with Megapari.\nStart here: {{Player link}}\nAndroid app: {{apk link}}\niOS app: {{iOS link}}\nPromo code: {{Promo code}}\nYou watch the games anyway — you might as well get paid.`},
+    {id:'e5',lang:'en',content:`Trusted odds. Fast payouts. Real results.\nMegapari is built for serious football bettors who want performance, not excuses.\nRegister: {{Player link}}\nAPK download: {{apk link}}\niOS download: {{iOS link}}\nUse code: {{Promo code}}\nPlay like a pro.`},
+    {id:'e6',lang:'en',content:`Weekend football hits different when you've got money on the line 😎⚽\nMake every goal count with Megapari.\nSign up: {{Player link}}\nAndroid: {{apk link}}\niOS: {{iOS link}}\nPromo code: {{Promo code}}\nFun to watch. Better to win.`},
+    {id:'e7',lang:'en',content:`🎁 Bonus unlocked. All that's missing is you.\nCreate your Megapari account and activate your promo reward today.\n👉 Register: {{Player link}}\n📲 APK: {{apk link}}\n🍏 iOS: {{iOS link}}\nPromo code: {{Promo code}}\nClaim it. Bet it. Win it.`},
+  ];
+  const fr = [
+    {id:'f1',lang:'fr',content:`⚽🔥 L'ÉNERGIE DES GRANDS MATCHS COMMENCE ICI!\nTransformez chaque match en vrais gains avec Megapari. Les cotes sont alléchantes, les paiements rapides, et l'action ne s'arrête jamais.\n🎯 Inscrivez-vous: {{Player link}}\n📲 APK Android: {{apk link}}\n🍏 App iOS: {{iOS link}}\n🎁 Code promo: {{Promo code}}\nNe regardez plus le football — profitez-en.`},
+    {id:'f2',lang:'fr',content:`Les parieurs intelligents ne courent pas après la chance — ils utilisent la bonne plateforme.\nMegapari vous offre des cotes compétitives, les paris en direct et des retraits instantanés.\n👉 Rejoignez ici: {{Player link}}\n📥 Android: {{apk link}}\n📱 iOS: {{iOS link}}\n💰 Code promo: {{Promo code}}\nPariez plus intelligemment. Gagnez plus vite.`},
+  ];
+  const ar = [
+    {id:'a1',lang:'ar',content:`⚽🔥 طاقة المباراة الكبيرة تبدأ هنا!\nحوّل كل مباراة إلى أرباح حقيقية مع Megapari. الأوضاع رائعة، المدفوعات سريعة والإثارة لا تتوقف.\n🎯 سجّل الآن: {{Player link}}\n📲 تطبيق أندرويد: {{apk link}}\n🍏 تطبيق iOS: {{iOS link}}\n🎁 كود الترويج: {{Promo code}}\nلا تكتفِ بمشاهدة كرة القدم — استفد منها.`},
+  ];
+  const es = [
+    {id:'s1',lang:'es',content:`⚽🔥 ¡LA ENERGÍA DE LOS GRANDES PARTIDOS EMPIEZA AQUÍ!\nConvierte cada partido en ganancias reales con Megapari. Las cuotas son increíbles, los pagos rápidos y la acción nunca para.\n🎯 Regístrate ahora: {{Player link}}\n📲 APK Android: {{apk link}}\n🍏 App iOS: {{iOS link}}\n🎁 Código promo: {{Promo code}}\nNo solo mires el fútbol — gana con él.`},
+  ];
+  const pt = [
+    {id:'p1',lang:'pt',content:`⚽🔥 A ENERGIA DOS GRANDES JOGOS COMEÇA AQUI!\nTransforme cada jogo em ganhos reais com a Megapari. As odds são ótimas, os pagamentos rápidos e a ação nunca para.\n🎯 Registre-se agora: {{Player link}}\n📲 APK Android: {{apk link}}\n🍏 App iOS: {{iOS link}}\n🎁 Código promo: {{Promo code}}\nNão apenas assista ao futebol — lucre com ele.`},
+  ];
+  return [...en,...fr,...ar,...es,...pt];
+}
+
+// Init default texts if none exist
+if(!localStorage.getItem('texts')){ setData('texts', getDefaultTexts()); }
+</script>
+</body>
+</html>
