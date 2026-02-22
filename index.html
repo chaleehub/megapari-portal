@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Megapari Affiliate Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800&family=Anton&family=Russo+One&family=Teko:wght@600;700&family=Barlow+Condensed:wght@700;800;900&display=swap" rel="stylesheet">
+
+<!-- ═══ FIREBASE SDK ═══ -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  PASTE YOUR FIREBASE CONFIG HERE (same as admin.html)   ║
+// ╚══════════════════════════════════════════════════════════╝
+const firebaseConfig = {
+  apiKey: "AIzaSyDPv24aymANX4AXCBkbvpOIYEOn7HflaY4",
+  authDomain: "mgpa-83b3d.firebaseapp.com",
+  projectId: "mgpa-83b3d",
+  storageBucket: "mgpa-83b3d.firebasestorage.app",
+  messagingSenderId: "935947107736",
+  appId: "1:935947107736:web:ef550d2f6d77052427bfed",
+  measurementId: "G-XWXHQQSTZL"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+const COL = 'megapari';
+
+async function fsGet(docId) {
+  try { const snap = await getDoc(doc(db, COL, docId)); return snap.exists() ? snap.data() : null; }
+  catch(e) { console.error('fsGet', e); return null; }
+}
+async function fsSet(docId, data) {
+  try { await setDoc(doc(db, COL, docId), data); return true; }
+  catch(e) { console.error('fsSet', e); return false; }
+}
+
+window.FS = { fsGet, fsSet };
+window.firebaseReady = true;
+window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<style>
+:root{
+  --ac:#e53935;--ac2:#c62828;--dark:#0a0a0f;
+  --card:#12121a;--card2:#1a1a26;--border:rgba(229,57,53,.18);
+  --text:#f0f0f8;--muted:#8888aa;--blue2:#82b1ff;--amber:#ffab40;--green:#69f0ae;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--dark);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 5% 10%,rgba(229,57,53,.07)0%,transparent 55%),radial-gradient(ellipse 50% 40% at 95% 90%,rgba(92,159,212,.05)0%,transparent 50%);pointer-events:none;z-index:0;}
+.wrap{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:0 18px;}
+header{padding:18px 0 12px;border-bottom:1px solid var(--border);}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;color:var(--ac);letter-spacing:3px;line-height:1;}
+.logo span{color:var(--text);}
+.portal-label{font-size:.56rem;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase;margin-top:2px;}
+.page-tabs{display:flex;border-bottom:1px solid var(--border);}
+.ptab{padding:13px 20px;font-size:.82rem;font-weight:600;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;transition:all .15s;user-select:none;}
+.ptab:hover{color:var(--text);}
+.ptab.on{color:var(--ac);border-bottom-color:var(--ac);}
+.pview{display:none;padding:26px 0 60px;}.pview.on{display:block;}
+.hero{padding:34px 0 22px;text-align:center;}
+.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,7vw,4.2rem);line-height:.95;letter-spacing:4px;}
+.hero h1 em{color:var(--ac);font-style:normal;display:block;}
+.hero p{margin:11px auto 24px;color:var(--muted);font-size:.88rem;max-width:440px;line-height:1.65;}
+.search-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;max-width:480px;margin:0 auto 18px;box-shadow:0 8px 32px rgba(0,0,0,.4);}
+.fl{display:block;font-size:.62rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);font-weight:600;margin-bottom:5px;}
+.search-box select,.search-box input[type=text]{width:100%;background:#0d0d15;border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 12px;font-family:'Outfit',sans-serif;font-size:.88rem;outline:none;transition:border-color .2s;margin-bottom:10px;}
+.search-box select:focus,.search-box input:focus{border-color:var(--ac);}
+.btn-s{width:100%;padding:11px;background:var(--ac);color:#fff;border:none;border-radius:8px;font-family:'Outfit',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px;}
+.btn-s:hover{background:var(--ac2);transform:translateY(-1px);}
+.btn-s:disabled{opacity:.6;cursor:wait;transform:none;}
+.search-type-tabs{display:flex;gap:6px;margin-bottom:10px;}
+.stt{flex:1;padding:7px;background:#0d0d15;border:1px solid var(--border);border-radius:7px;font-size:.73rem;font-weight:600;color:var(--muted);cursor:pointer;text-align:center;transition:all .15s;font-family:'Outfit',sans-serif;}
+.stt.on{background:rgba(229,57,53,.1);border-color:var(--ac);color:var(--ac);}
+#results{display:none;}
+.aff-hdr{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.aff-badge{background:rgba(229,57,53,.12);border:1px solid rgba(229,57,53,.3);border-radius:6px;padding:2px 8px;font-size:.64rem;color:var(--ac);font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+.aff-name{font-size:.96rem;font-weight:600;}
+.promo-chip{background:#1a0d0d;padding:3px 12px;border-radius:20px;font-size:.81rem;color:var(--ac);font-weight:800;letter-spacing:1.5px;margin-left:auto;border:1px solid rgba(229,57,53,.25);}
+.aff-lang-chip{background:rgba(92,159,212,.1);border:1px solid rgba(92,159,212,.25);border-radius:6px;padding:2px 8px;font-size:.62rem;color:var(--blue2);font-weight:700;}
+.links-bar{display:flex;gap:7px;flex-wrap:wrap;padding:11px 14px;background:var(--card2);border:1px solid var(--border);border-radius:12px;margin-bottom:16px;}
+.li{display:flex;flex-direction:column;gap:2px;flex:1;min-width:120px;}
+.li label{font-size:.56rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;}
+.li a{font-size:.71rem;color:var(--blue2);word-break:break-all;text-decoration:none;}
+.li a:hover{text-decoration:underline;}
+.li span{font-size:.81rem;color:var(--ac);font-weight:800;letter-spacing:1px;}
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px;color:var(--muted);margin:20px 0 9px;padding-bottom:5px;border-bottom:1px solid var(--border);}
+.banner-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:11px;}
+.banner-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s,transform .18s;}
+.banner-card:hover{border-color:var(--ac);transform:translateY(-2px);}
+.banner-img{width:100%;background:#0a0a0f;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:80px;}
+.banner-img canvas{display:block;width:100%;height:auto;}
+.banner-img .ldr{color:var(--muted);font-size:.71rem;padding:16px;text-align:center;}
+.banner-meta{padding:8px 11px;}
+.banner-date{font-size:.62rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.banner-cd{font-size:.66rem;color:var(--amber);font-weight:700;margin-top:2px;}
+.btn-dl{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;margin-top:6px;padding:6px;background:rgba(229,57,53,.08);border:1px solid rgba(229,57,53,.25);border-radius:6px;color:var(--ac);font-size:.7rem;font-weight:700;cursor:pointer;transition:all .18s;text-transform:uppercase;}
+.btn-dl:hover{background:rgba(229,57,53,.18);border-color:var(--ac);}
+.cap-pair{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:11px;overflow:hidden;}
+.cap-top{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:9px 14px 0;}
+.cap-num{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;flex:1;}
+.copy-btn{background:rgba(229,57,53,.08);border:1px solid rgba(229,57,53,.2);border-radius:5px;padding:4px 11px;font-size:.65rem;color:var(--ac);cursor:pointer;transition:all .18s;letter-spacing:1px;text-transform:uppercase;font-family:'Outfit',sans-serif;font-weight:700;}
+.copy-btn:hover{background:rgba(229,57,53,.18);}
+.copy-btn.ok{background:var(--ac);color:#fff;}
+.copy-img-btn{background:rgba(92,159,212,.08);border:1px solid rgba(92,159,212,.2);border-radius:5px;padding:4px 11px;font-size:.65rem;color:var(--blue2);cursor:pointer;transition:all .18s;letter-spacing:1px;text-transform:uppercase;font-family:'Outfit',sans-serif;font-weight:700;}
+.copy-img-btn:hover{background:rgba(92,159,212,.18);}
+.copy-img-btn.ok{background:var(--blue2);color:#000;}
+.cap-body{display:grid;}
+.cap-text-wrap{padding:10px 14px;white-space:pre-wrap;font-size:.84rem;line-height:1.75;}
+.cap-banner-side{background:#060610;display:flex;flex-direction:column;align-items:center;justify-content:center;border-left:1px solid var(--border);padding:8px;gap:6px;min-width:180px;}
+.cap-banner-side canvas{display:block;width:100%;height:auto;max-height:160px;border-radius:5px;}
+.empty{text-align:center;padding:28px;color:var(--muted);}
+.empty .ei{font-size:1.9rem;margin-bottom:6px;opacity:.4;}
+.sbox{padding:10px 14px;border-radius:8px;font-size:.82rem;line-height:1.6;margin-top:10px;display:none;}
+.sbox.ok{background:rgba(105,240,174,.08);color:var(--green);border:1px solid rgba(105,240,174,.2);}
+.sbox.err{background:rgba(255,82,82,.1);color:#ff5252;border:1px solid rgba(255,82,82,.2);}
+.sbox.warn{background:rgba(255,171,64,.1);color:var(--amber);border:1px solid rgba(255,171,64,.2);}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ac);color:#fff;padding:7px 18px;border-radius:30px;font-weight:700;font-size:.76rem;transition:transform .28s;z-index:999;pointer-events:none;white-space:nowrap;}
+#toast.on{transform:translateX(-50%) translateY(0);}
+#admin-btn{position:fixed;bottom:0;right:0;width:36px;height:36px;cursor:pointer;z-index:50;opacity:0;}
+@media(max-width:600px){
+  .cap-body{grid-template-columns:1fr!important;}
+  .cap-banner-side{min-width:unset;width:100%;border-left:none;border-top:1px solid var(--border);}
+  .ptab{padding:10px 13px;font-size:.76rem;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">MEGA<span>PARI</span></div>
+    <div class="portal-label">Affiliate Materials Portal · Cloud Powered</div>
+  </header>
+  <div class="page-tabs">
+    <div class="ptab on" id="tab-search" onclick="switchTab('search')">🔍 Get My Materials</div>
+    <div class="ptab" id="tab-register" onclick="switchTab('register')">📝 Join / Register</div>
+  </div>
+
+  <!-- TAB: GET MATERIALS -->
+  <div class="pview on" id="view-search">
+    <section class="hero">
+      <h1>YOUR <em>PROMO</em> TOOLKIT</h1>
+      <p>Enter your Affiliate ID or Promo Code to access your personalised banners, captions, and referral links — from any device, anywhere.</p>
+    </section>
+    <div class="search-box">
+      <label class="fl">Search By</label>
+      <div class="search-type-tabs">
+        <button class="stt on" id="stt-id" onclick="setSearchType('id')">Affiliate ID</button>
+        <button class="stt" id="stt-promo" onclick="setSearchType('promo')">Promo Code</button>
+      </div>
+      <label class="fl" id="search-label">Affiliate ID</label>
+      <input type="text" id="affIn" placeholder="e.g. AFF12345" onkeydown="if(event.key==='Enter')doSearch()"/>
+      <button class="btn-s" id="search-btn" onclick="doSearch()">🔍 GET MY MATERIALS</button>
+      <p style="text-align:center;margin-top:9px;font-size:.7rem;color:var(--muted)">
+        New affiliate? <span style="color:var(--ac);cursor:pointer;font-weight:700" onclick="switchTab('register')">Register here →</span>
+      </p>
+    </div>
+    <div id="search-status" class="sbox" style="max-width:480px;margin:0 auto 12px"></div>
+
+    <section id="results">
+      <div class="aff-hdr">
+        <span class="aff-badge">✓ Verified</span>
+        <span class="aff-name" id="r-name">—</span>
+        <span class="aff-lang-chip" id="r-lang-chip">EN</span>
+        <span class="promo-chip" id="r-promo">CODE: —</span>
+      </div>
+      <div class="links-bar" id="r-links"></div>
+      <div id="dated-sec"><div class="sec-title">📅 DATED BANNERS</div><div class="banner-grid" id="dated-grid"></div></div>
+      <div id="ev-sec"><div class="sec-title">♾️ EVERGREEN BANNERS</div><div class="banner-grid" id="ev-grid"></div></div>
+      <div id="txt-sec"><div class="sec-title">✍️ POST CAPTIONS</div><div id="txt-list"></div></div>
+    </section>
+  </div>
+
+  <!-- TAB: REGISTER -->
+  <div class="pview" id="view-register">
+    <section class="hero">
+      <h1>JOIN AS AN <em>AFFILIATE</em></h1>
+      <p>Submit your details. Once the admin approves, enter your Affiliate ID in Get My Materials to access everything — instantly, on any device.</p>
+    </section>
+    <div class="search-box" style="max-width:540px">
+      <div style="font-size:.76rem;color:var(--muted);line-height:1.6;margin-bottom:12px;padding:9px 12px;background:rgba(229,57,53,.04);border:1px solid rgba(229,57,53,.14);border-radius:8px;">
+        ⚠️ Registration is <strong style="color:var(--ac)">pending approval</strong> until admin activates your account. After approval your materials are live immediately on all devices.
+      </div>
+      <label class="fl">Affiliate ID (unique) *</label>
+      <input type="text" id="reg-id" placeholder="e.g. JOHN2024"/>
+      <label class="fl">Your Name</label>
+      <input type="text" id="reg-name" placeholder="John Doe"/>
+      <label class="fl">Promo Code *</label>
+      <input type="text" id="reg-promo" placeholder="e.g. JOHN50"/>
+      <label class="fl">Player / Referral Link</label>
+      <input type="text" id="reg-player" placeholder="https://..."/>
+      <label class="fl">Android APK Link</label>
+      <input type="text" id="reg-apk" placeholder="https://..."/>
+      <label class="fl">iOS App Link</label>
+      <input type="text" id="reg-ios" placeholder="https://..."/>
+      <label class="fl">Your Language</label>
+      <select id="reg-lang" style="margin-bottom:12px">
+        <option value="en">🇬🇧 English</option><option value="fr">🇫🇷 French</option>
+        <option value="ar">🇸🇦 Arabic</option><option value="es">🇪🇸 Spanish</option><option value="pt">🇧🇷 Portuguese</option>
+      </select>
+      <button class="btn-s" id="reg-btn" onclick="submitReg()">📤 SUBMIT REGISTRATION</button>
+      <div id="reg-status" class="sbox"></div>
+    </div>
+  </div>
+</div>
+
+<div id="admin-btn" onclick="window.location.href='admin.html'"></div>
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+// FIRESTORE READ/WRITE via window.FS (set by module)
+// ══════════════════════════════════════════════════
+async function fsGet(k) { return window.FS ? window.FS.fsGet(k) : null; }
+async function fsSet(k,v) { return window.FS ? window.FS.fsSet(k,v) : false; }
+
+// Wait for Firebase to be ready before auto-searching URL params
+function onReady(fn) {
+  if (window.firebaseReady) fn();
+  else window.addEventListener('firebase-ready', fn);
+}
+
+// Simple in-memory cache per page load
+const _cache = {};
+async function cacheGet(key) {
+  if (_cache[key] !== undefined) return _cache[key];
+  const doc = await fsGet(key);
+  _cache[key] = (doc && doc.list) ? doc.list : [];
+  return _cache[key];
+}
+
+const LANG_NAMES={en:'English',fr:'French',ar:'Arabic',es:'Spanish',pt:'Portuguese'};
+
+// ── Tabs ──
+function switchTab(t){
+  document.querySelectorAll('.ptab').forEach(el=>el.classList.remove('on'));
+  document.querySelectorAll('.pview').forEach(el=>el.classList.remove('on'));
+  document.getElementById('tab-'+t).classList.add('on');
+  document.getElementById('view-'+t).classList.add('on');
+}
+
+// ── Search type toggle ──
+let searchType='id';
+function setSearchType(t){
+  searchType=t;
+  document.getElementById('stt-id').classList.toggle('on',t==='id');
+  document.getElementById('stt-promo').classList.toggle('on',t==='promo');
+  document.getElementById('search-label').textContent=t==='id'?'Affiliate ID':'Promo Code';
+  document.getElementById('affIn').placeholder=t==='id'?'e.g. AFF12345':'e.g. JOHN50';
+  document.getElementById('affIn').value='';
+}
+
+// ── Banner expiry ──
+function removeAt(b){if(b.evergreen||!b.endDate)return Infinity;const e=new Date(b.endDate);e.setHours(23,59,59,999);return e.getTime()+35*3600000;}
+function isActive(b){return Date.now()<removeAt(b);}
+function msLeft(b){return Math.max(0,removeAt(b)-Date.now());}
+function fmtCD(ms){if(ms<=0)return'Removing soon…';const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000),s=Math.floor((ms%60000)/1000);return`Removes in ${h}h ${m}m ${s}s`;}
+
+// ── Auto-fit + stamp ──
+function autoFitSize(ctx,text,zoneW,zoneH,fontFamily){
+  let lo=6,hi=Math.min(Math.floor(zoneH*1.05),400),best=lo;
+  for(let i=0;i<26;i++){if(lo>hi)break;const mid=Math.floor((lo+hi)/2);ctx.font=`bold ${mid}px '${fontFamily}',Arial,sans-serif`;const m=ctx.measureText(text);const tw=m.width;const th=(m.actualBoundingBoxAscent!==undefined)?(m.actualBoundingBoxAscent+m.actualBoundingBoxDescent):mid*1.1;if(tw<=zoneW&&th<=zoneH){best=mid;lo=mid+1;}else{hi=mid-1;}}
+  return Math.max(best,6);
+}
+function stampCanvas(ctx,banner,promoCode){
+  if(!banner.promoConfig||!promoCode)return;const pc=banner.promoConfig;
+  ctx.save();ctx.beginPath();ctx.rect(pc.x,pc.y,pc.w,pc.h);ctx.clip();
+  const ff=pc.font?`'${pc.font}'`:'Arial Black';let fsize=pc.size||36;
+  if(pc.autofit!==false)fsize=autoFitSize(ctx,promoCode,pc.w,pc.h,pc.font||'Arial Black');
+  ctx.font=`bold ${fsize}px ${ff},Arial,sans-serif`;
+  if(pc.gradient&&pc.color2){const dir=pc.gradDir||'lr';let grd;if(dir==='lr')grd=ctx.createLinearGradient(pc.x,pc.y,pc.x+pc.w,pc.y);else if(dir==='tb')grd=ctx.createLinearGradient(pc.x,pc.y,pc.x,pc.y+pc.h);else grd=ctx.createLinearGradient(pc.x,pc.y,pc.x+pc.w,pc.y+pc.h);grd.addColorStop(0,pc.color||'#fff');grd.addColorStop(1,pc.color2);ctx.fillStyle=grd;}else{ctx.fillStyle=pc.color||'#ffffff';}
+  const align=pc.align||'center';ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillText(promoCode,align==='center'?pc.x+pc.w/2:align==='left'?pc.x+4:pc.x+pc.w-4,pc.y+pc.h/2);ctx.restore();
+}
+function drawStamped(canvas,imgSrc,banner,promoCode){
+  const img=new Image();img.onload=function(){canvas.width=img.width;canvas.height=img.height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);stampCanvas(ctx,banner,promoCode);};img.src=imgSrc;
+}
+
+// ── Status helpers ──
+function setStatus(elId,type,msg){const el=document.getElementById(elId);el.className='sbox '+type;el.innerHTML=msg;el.style.display='block';}
+function hideStatus(elId){document.getElementById(elId).style.display='none';}
+
+// ══════════════════════════════════════════════════
+// SEARCH — Bug 3 Fix:
+// Banners are filtered strictly by the affiliate's saved language (aff.lang).
+// The user's dropdown language is only used to display preference, not to filter.
+// ══════════════════════════════════════════════════
+async function doSearch(){
+  const query=document.getElementById('affIn').value.trim();
+  if(!query){setStatus('search-status','err','Please enter your '+(searchType==='id'?'Affiliate ID':'Promo Code')+'.');return;}
+
+  const btn=document.getElementById('search-btn');
+  btn.textContent='⏳ Loading from Firestore…';btn.disabled=true;
+  hideStatus('search-status');
+
+  try{
+    // Fetch affiliates from Firestore
+    const affs=await cacheGet('affiliates');
+
+    let aff;
+    if(searchType==='id'){
+      aff=affs.find(a=>a.id.toLowerCase()===query.toLowerCase());
+    } else {
+      // Search by promo code
+      aff=affs.find(a=>(a.promoCode||'').toLowerCase()===query.toLowerCase());
+    }
+
+    if(!aff){
+      // Check pending registrations
+      const regs=await cacheGet('regs');
+      const isPending=regs.find(r=>
+        r.id.toLowerCase()===query.toLowerCase()||
+        (r.promoCode||'').toLowerCase()===query.toLowerCase()
+      );
+      if(isPending){
+        setStatus('search-status','warn','⏳ Your registration is pending admin approval. You\'ll receive access once approved — usually within 24 hours.');
+      } else {
+        setStatus('search-status','err','❌ Not found. Double-check your '+(searchType==='id'?'Affiliate ID':'Promo Code')+', or <span style="color:var(--ac);cursor:pointer;font-weight:700" onclick="switchTab(\'register\')">register here</span>.');
+      }
+      return;
+    }
+
+    hideStatus('search-status');
+    await renderResults(aff);
+  } catch(e) {
+    setStatus('search-status','err','❌ Could not connect to server. Check your internet connection.');
+    console.error(e);
+  } finally {
+    btn.textContent='🔍 GET MY MATERIALS';btn.disabled=false;
+  }
+}
+
+let _cdTimers=[];
+async function renderResults(aff){
+  _cdTimers.forEach(clearInterval);_cdTimers=[];
+
+  // The affiliate's saved language determines which content they see
+  // This is the KEY fix for Bug 3 — always use aff.lang, never override it
+  const affLang = aff.lang || 'en';
+
+  document.getElementById('r-name').textContent=aff.name||aff.id;
+  document.getElementById('r-promo').textContent='CODE: '+(aff.promoCode||'—');
+  document.getElementById('r-lang-chip').textContent=(LANG_NAMES[affLang]||affLang).toUpperCase();
+  document.getElementById('r-links').innerHTML=`
+    <div class="li"><label>Affiliate ID</label><span style="color:var(--text);font-weight:600">${eh(aff.id)}</span></div>
+    <div class="li"><label>Player Link</label>${aff.playerLink?`<a href="${eh(aff.playerLink)}" target="_blank">${trunc(aff.playerLink,28)}</a>`:'<span style="color:var(--muted)">—</span>'}</div>
+    <div class="li"><label>Android APK</label>${aff.apkLink?`<a href="${eh(aff.apkLink)}" target="_blank">${trunc(aff.apkLink,28)}</a>`:'<span style="color:var(--muted)">—</span>'}</div>
+    <div class="li"><label>iOS App</label>${aff.iosLink?`<a href="${eh(aff.iosLink)}" target="_blank">${trunc(aff.iosLink,28)}</a>`:'<span style="color:var(--muted)">—</span>'}</div>
+    <div class="li"><label>Promo Code</label><span>${eh(aff.promoCode||'—')}</span></div>
+    <div class="li"><label>Language</label><span style="font-size:.78rem;color:var(--blue2)">${LANG_NAMES[affLang]||affLang}</span></div>`;
+
+  // Load ALL active banners, then filter STRICTLY by affiliate's language
+  const allBanners=(await cacheGet('banners')).filter(isActive);
+
+  // BUG 3 FIX: Filter banners by aff.lang only — not by the UI dropdown
+  const dated    = allBanners.filter(b => !b.evergreen && b.lang === affLang);
+  const evergreen= allBanners.filter(b =>  b.evergreen && b.lang === affLang);
+
+  // Filter captions by affiliate's language
+  const texts=(await cacheGet('texts')).filter(t => t.lang === affLang);
+
+  await renderBannerGrid('dated-grid',   dated,    aff, 'No dated banners for your language right now');
+  await renderBannerGrid('ev-grid',      evergreen, aff, 'No evergreen banners for your language');
+  renderCaptions(texts, aff, affLang, allBanners.filter(b => b.lang === affLang));
+
+  document.getElementById('results').style.display='block';
+  document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function renderBannerGrid(gridId,banners,aff,emptyMsg){
+  const grid=document.getElementById(gridId);
+  if(!banners.length){grid.innerHTML=`<div class="empty"><div class="ei">🖼️</div><p>${emptyMsg}</p></div>`;return;}
+  grid.innerHTML=banners.map(b=>{
+    const ms=msLeft(b);
+    const cdHtml=!b.evergreen&&ms<Infinity?`<div class="banner-cd" id="bcd-${b.id}">${fmtCD(ms)}</div>`:'';
+    return`<div class="banner-card">
+      <div class="banner-img" id="bi-${b.id}"><div class="ldr">⏳ Loading from cloud…</div></div>
+      <div class="banner-meta">
+        <div class="banner-date">${b.evergreen?'Evergreen':(b.startDate||'')+(b.endDate?' – '+b.endDate:'')}</div>
+        ${cdHtml}
+        <button class="btn-dl" onclick="dlBanner('${b.id}','${eh(aff.promoCode)}')">⬇ Download PNG</button>
+      </div></div>`;
+  }).join('');
+
+  // Countdown timers
+  banners.filter(b=>!b.evergreen).forEach(b=>{
+    const el=document.getElementById('bcd-'+b.id);if(!el)return;
+    const t=setInterval(()=>{const ms2=msLeft(b);if(ms2<=0){clearInterval(t);el.textContent='Removed';return;}el.textContent=fmtCD(ms2);},1000);
+    _cdTimers.push(t);
+  });
+
+  // Fetch images from Firestore and render
+  for(const b of banners){
+    const wrap=document.getElementById('bi-'+b.id);if(!wrap)continue;
+    try{
+      const imgDoc=await fsGet('img_'+b.id);
+      if(!imgDoc||!imgDoc.data){wrap.innerHTML='<div class="ldr">Image not available</div>';continue;}
+      wrap.innerHTML='';
+      const canvas=document.createElement('canvas');wrap.appendChild(canvas);
+      drawStamped(canvas,imgDoc.data,b,aff.promoCode);
+    }catch(e){wrap.innerHTML='<div class="ldr">Error loading</div>';}
+  }
+}
+
+function renderCaptions(texts,aff,affLang,langBanners){
+  const tEl=document.getElementById('txt-list');
+  if(!texts.length){tEl.innerHTML='<div class="empty"><div class="ei">✍️</div><p>No captions available in '+( LANG_NAMES[affLang]||affLang)+'</p></div>';return;}
+  const capHtmls=texts.map((t,i)=>{
+    const filled=fillText(t.content,aff);
+    const enc=encodeURIComponent(filled);
+    const assignedB=langBanners.find(b=>b.assignedTextId===t.id);
+    const hasBanner=!!assignedB;
+    const sideHtml=hasBanner?`<div class="cap-banner-side">
+      <canvas id="cbc-${assignedB.id}-${i}" data-bid="${assignedB.id}" data-promo="${eh(aff.promoCode)}"></canvas>
+      <button class="copy-img-btn" onclick="copyBannerImage('cbc-${assignedB.id}-${i}',this)">🖼️ Copy Image</button>
+    </div>`:'';
+    return`<div class="cap-pair">
+      <div class="cap-top">
+        <span class="cap-num">Caption ${i+1}</span>
+        <div style="display:flex;gap:5px"><button class="copy-btn" onclick="doCopy(this,'${enc}')">📋 Copy Text</button></div>
+      </div>
+      <div class="cap-body" style="grid-template-columns:${hasBanner?'1fr 200px':'1fr'}">
+        <div class="cap-text-wrap">${eh(filled)}</div>
+        ${sideHtml}
+      </div></div>`;
+  });
+  tEl.innerHTML=capHtmls.join('');
+
+  // Load caption banner thumbnails
+  setTimeout(async()=>{
+    const canvases=document.querySelectorAll('[data-bid]');
+    for(const c of canvases){
+      const bid=c.getAttribute('data-bid');const promo=c.getAttribute('data-promo');
+      const b=langBanners.find(x=>x.id===bid);if(!b)continue;
+      try{const imgDoc=await fsGet('img_'+bid);if(imgDoc&&imgDoc.data)drawStamped(c,imgDoc.data,b,promo);}catch(e){}
+    }
+  },150);
+}
+
+// ── Download ──
+async function dlBanner(bannerId,promoCode){
+  showToast('Fetching from Firestore…');
+  const banners=await cacheGet('banners');const b=banners.find(x=>x.id===bannerId);if(!b){showToast('Banner not found');return;}
+  try{
+    const imgDoc=await fsGet('img_'+bannerId);if(!imgDoc||!imgDoc.data){showToast('Image not available');return;}
+    const img=new Image();img.onload=function(){
+      const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const ctx=c.getContext('2d');ctx.drawImage(img,0,0);stampCanvas(ctx,b,promoCode);
+      const a=document.createElement('a');a.download=(promoCode||bannerId).replace(/[^a-z0-9]/gi,'_')+'.png';a.href=c.toDataURL('image/png');a.click();showToast('Downloaded!');
+    };img.src=imgDoc.data;
+  }catch(e){showToast('Error: '+e.message);}
+}
+
+// ── Copy image ──
+function copyBannerImage(canvasId,btn){
+  const canvas=document.getElementById(canvasId);
+  if(!canvas||!canvas.width){showToast('Image not ready yet');return;}
+  canvas.toBlob(blob=>{
+    if(!blob){showToast('Could not copy');return;}
+    try{navigator.clipboard.write([new ClipboardItem({'image/png':blob})]).then(()=>{btn.textContent='✓ Copied!';btn.classList.add('ok');setTimeout(()=>{btn.textContent='🖼️ Copy Image';btn.classList.remove('ok');},2400);showToast('Image copied!');}).catch(()=>{const a=document.createElement('a');a.href=canvas.toDataURL();a.download='banner.png';a.click();showToast('Downloaded!');});}
+    catch(e){const a=document.createElement('a');a.href=canvas.toDataURL();a.download='banner.png';a.click();}
+  },'image/png');
+}
+
+// ── Copy text ──
+function doCopy(btn,enc){
+  navigator.clipboard.writeText(decodeURIComponent(enc)).then(()=>{btn.textContent='✓ Copied!';btn.classList.add('ok');setTimeout(()=>{btn.textContent='📋 Copy Text';btn.classList.remove('ok');},2200);showToast('Caption copied!');}).catch(()=>showToast('Copy failed'));
+}
+
+// ══════════════════════════════════════════════════
+// REGISTRATION — saves to Firestore regs document
+// ══════════════════════════════════════════════════
+async function submitReg(){
+  const id=document.getElementById('reg-id').value.trim();
+  const name=document.getElementById('reg-name').value.trim();
+  const promo=document.getElementById('reg-promo').value.trim();
+  const player=document.getElementById('reg-player').value.trim();
+  const apk=document.getElementById('reg-apk').value.trim();
+  const ios=document.getElementById('reg-ios').value.trim();
+  const lang=document.getElementById('reg-lang').value;
+  if(!id||!promo){setStatus('reg-status','err','❌ Affiliate ID and Promo Code are required.');return;}
+  const btn=document.getElementById('reg-btn');btn.textContent='⏳ Saving to Firestore…';btn.disabled=true;
+  try{
+    const affs=await cacheGet('affiliates');
+    if(affs.find(a=>a.id.toLowerCase()===id.toLowerCase())){
+      setStatus('reg-status','err','❌ This Affiliate ID is already registered. Go to <strong>Get My Materials</strong> to access your account.');return;
+    }
+    let regs=await cacheGet('regs');
+    if(regs.find(r=>r.id.toLowerCase()===id.toLowerCase())){
+      setStatus('reg-status','warn','⏳ Your registration is already submitted and pending approval.');return;
+    }
+    const reg={id,name,promoCode:promo,playerLink:player,apkLink:apk,iosLink:ios,lang,submittedAt:Date.now()};
+    regs=[...regs,reg];
+    await fsSet('regs',{list:regs});
+    _cache['regs']=regs; // update local cache
+    setStatus('reg-status','ok',`✅ Registration submitted to Firestore!<br><br>Your Affiliate ID: <strong>"${eh(id)}"</strong><br>Once admin approves your account, enter your ID in <strong>Get My Materials</strong> — works on any device.`);
+    ['reg-id','reg-name','reg-promo','reg-player','reg-apk','reg-ios'].forEach(f=>document.getElementById(f).value='');
+    showToast('Registration submitted!');
+  }catch(e){
+    setStatus('reg-status','err','❌ Error connecting to Firestore: '+e.message);
+  }finally{
+    btn.textContent='📤 SUBMIT REGISTRATION';btn.disabled=false;
+  }
+}
+
+// ── URL auto-fill ──
+onReady(()=>{
+  const params=new URLSearchParams(window.location.search);
+  const affParam=params.get('aff');
+  if(affParam){
+    document.getElementById('affIn').value=affParam;
+    setSearchType('id');
+    setTimeout(()=>doSearch(),200);
+  }
+});
+
+// ── Helpers ──
+function fillText(t,aff){
+  return t.replace(/\{\{Player link\}\}/gi,aff.playerLink||'').replace(/\{\{apk link\}\}/gi,aff.apkLink||'').replace(/\{\{iOS link\}\}/gi,aff.iosLink||'').replace(/\{\{Promo code\}\}/gi,aff.promoCode||'');
+}
+function eh(s){const d=document.createElement('div');d.textContent=String(s||'');return d.innerHTML;}
+function trunc(s,n){return s&&s.length>n?s.slice(0,n)+'…':s;}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('on'),2500);}
+</script>
+</body>
+</html>

@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Admin — Megapari Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800&family=Anton&family=Black+Han+Sans&family=Teko:wght@600;700&family=Barlow+Condensed:wght@700;800;900&family=Russo+One&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<!-- ═══ FIREBASE SDK ═══ -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  STEP 1: PASTE YOUR FIREBASE CONFIG BELOW               ║
+// ║  Get it from: Firebase Console → Project Settings       ║
+// ╚══════════════════════════════════════════════════════════╝
+  const firebaseConfig = {
+  apiKey: "AIzaSyDPv24aymANX4AXCBkbvpOIYEOn7HflaY4",
+  authDomain: "mgpa-83b3d.firebaseapp.com",
+  projectId: "mgpa-83b3d",
+  storageBucket: "mgpa-83b3d.firebasestorage.app",
+  messagingSenderId: "935947107736",
+  appId: "1:935947107736:web:ef550d2f6d77052427bfed",
+  measurementId: "G-XWXHQQSTZL"
+};
+
+// Initialise Firebase
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ══════════════════════════════════════════════════
+// FIRESTORE HELPERS
+// Collection: "megapari" — documents for each data type
+// ══════════════════════════════════════════════════
+const COL = 'megapari';
+
+// Read a document (returns data object or null)
+async function fsGet(docId) {
+  try {
+    const snap = await getDoc(doc(db, COL, docId));
+    return snap.exists() ? snap.data() : null;
+  } catch(e) { console.error('fsGet', docId, e); return null; }
+}
+
+// Write/overwrite a document
+async function fsSet(docId, data) {
+  try {
+    await setDoc(doc(db, COL, docId), data);
+    return true;
+  } catch(e) { console.error('fsSet', docId, e); return false; }
+}
+
+// Delete a document
+async function fsDel(docId) {
+  try { await deleteDoc(doc(db, COL, docId)); return true; }
+  catch(e) { return false; }
+}
+
+// ── Data keys ──
+// config      → { adminpw }
+// affiliates  → { list: [...] }
+// banners     → { list: [...] }   (promoConfig etc, no image data)
+// texts       → { list: [...] }
+// regs        → { list: [...] }   pending registrations
+// approvedregs→ { list: [...] }
+// img_{id}    → { data: 'base64...' }   one doc per banner image
+
+// ── Expose to non-module scripts ──
+window.FS = { fsGet, fsSet, fsDel };
+window.firebaseReady = true;
+window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<style>
+:root{--ac:#e53935;--ac2:#c62828;--dark:#0a0a0f;--card:#12121a;--card2:#1a1a26;--border:rgba(229,57,53,.18);--text:#f0f0f8;--muted:#8888aa;--red:#ff5252;--amber:#ffab40;--blue2:#82b1ff;--green:#69f0ae;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--dark);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 5% 10%,rgba(229,57,53,.06)0%,transparent 55%),radial-gradient(ellipse 50% 40% at 95% 90%,rgba(92,159,212,.05)0%,transparent 50%);pointer-events:none;z-index:0;}
+.wrap{display:flex;min-height:100vh;position:relative;z-index:1;}
+.sidebar{width:240px;background:var(--card);border-right:1px solid var(--border);padding:20px 0;flex-shrink:0;position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:20;}
+.sidebar-logo{padding:0 20px 20px;border-bottom:1px solid var(--border);margin-bottom:10px;}
+.logo-t{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--ac);letter-spacing:2px;cursor:pointer;}
+.logo-t span{color:var(--text);}
+.logo-s{font-size:.58rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+.cloud-chip{margin-top:7px;display:inline-flex;align-items:center;gap:4px;font-size:.62rem;padding:3px 8px;border-radius:4px;}
+.cc-ok{background:rgba(105,240,174,.1);color:var(--green);border:1px solid rgba(105,240,174,.2);}
+.cc-err{background:rgba(255,82,82,.1);color:var(--red);border:1px solid rgba(255,82,82,.2);}
+.cc-wait{background:rgba(255,171,64,.1);color:var(--amber);border:1px solid rgba(255,171,64,.2);}
+.nav{display:flex;align-items:center;gap:8px;padding:11px 20px;cursor:pointer;font-size:.85rem;font-weight:500;color:var(--muted);transition:all .15s;border-left:3px solid transparent;user-select:none;}
+.nav:hover{color:var(--text);background:rgba(229,57,53,.05);}
+.nav.on{color:var(--ac);border-left-color:var(--ac);background:rgba(229,57,53,.08);}
+.nav-badge{background:var(--ac);color:#fff;font-size:.58rem;padding:1px 5px;border-radius:10px;margin-left:auto;font-weight:700;}
+.nav-sep{height:1px;background:var(--border);margin:6px 0;}
+.main{flex:1;margin-left:240px;padding:28px 32px;min-height:100vh;}
+.page{display:none;}.page.on{display:block;}
+.ph{margin-bottom:24px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+.ph h1{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:4px;}
+.ph p{color:var(--muted);font-size:.82rem;margin-top:4px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:20px;margin-bottom:18px;}
+.card-title{font-size:.76rem;font-weight:700;color:var(--ac);text-transform:uppercase;letter-spacing:2px;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:12px;}
+.fg{display:flex;flex-direction:column;gap:4px;}
+label{font-size:.66rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-weight:600;}
+input[type=text],input[type=date],input[type=number],input[type=password],select,textarea{background:#0d0d15;border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 12px;font-family:'Outfit',sans-serif;font-size:.86rem;outline:none;transition:border-color .2s;width:100%;}
+input[type=color]{background:#0d0d15;border:1px solid var(--border);border-radius:8px;height:38px;padding:3px 6px;width:100%;cursor:pointer;}
+input:focus,select:focus,textarea:focus{border-color:var(--ac);}
+textarea{resize:vertical;min-height:90px;line-height:1.6;}
+.btn{padding:8px 16px;border:none;border-radius:8px;font-family:'Outfit',sans-serif;font-size:.81rem;font-weight:700;cursor:pointer;transition:all .18s;display:inline-flex;align-items:center;gap:5px;}
+.g{background:var(--ac);color:#fff;}.g:hover{background:var(--ac2);transform:translateY(-1px);}
+.r{background:rgba(255,82,82,.12);color:var(--red);border:1px solid rgba(255,82,82,.25);}.r:hover{background:rgba(255,82,82,.2);}
+.a{background:rgba(255,171,64,.12);color:var(--amber);border:1px solid rgba(255,171,64,.25);}.a:hover{background:rgba(255,171,64,.2);}
+.o{background:transparent;color:var(--ac);border:1px solid rgba(229,57,53,.35);}.o:hover{background:rgba(229,57,53,.07);}
+.b{background:rgba(92,159,212,.12);color:var(--blue2);border:1px solid rgba(92,159,212,.25);}.b:hover{background:rgba(92,159,212,.2);}
+.sm{padding:4px 10px;font-size:.7rem;}
+.br{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px;}
+.tw{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:.81rem;}
+th{padding:8px 12px;background:var(--card2);color:var(--muted);text-align:left;font-weight:700;font-size:.64rem;text-transform:uppercase;letter-spacing:1.5px;}
+td{padding:9px 12px;border-bottom:1px solid rgba(229,57,53,.06);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}tr:hover td{background:rgba(229,57,53,.02);}
+.bx{display:inline-block;padding:2px 7px;border-radius:4px;font-size:.65rem;font-weight:700;}
+.bx-r{background:rgba(229,57,53,.12);color:var(--ac);border:1px solid rgba(229,57,53,.25);}
+.bx-a{background:rgba(255,171,64,.1);color:var(--amber);border:1px solid rgba(255,171,64,.2);}
+.bx-b{background:rgba(92,159,212,.1);color:var(--blue2);border:1px solid rgba(92,159,212,.2);}
+.dropzone{border:2px dashed rgba(229,57,53,.25);border-radius:10px;padding:22px;text-align:center;background:rgba(229,57,53,.02);transition:all .2s;cursor:pointer;}
+.dropzone:hover,.dropzone.drag{border-color:var(--ac);background:rgba(229,57,53,.05);}
+.dropzone .dz-icon{font-size:2.2rem;margin-bottom:7px;}
+.dropzone p{color:var(--muted);font-size:.82rem;line-height:1.6;}
+.dropzone strong{color:var(--ac);}
+#banner-queue{display:flex;flex-direction:column;gap:12px;margin-top:14px;}
+.bq-item{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px;}
+.bq-top{display:flex;align-items:center;gap:10px;margin-bottom:7px;flex-wrap:wrap;}
+.bq-thumb{width:75px;height:45px;object-fit:cover;border-radius:5px;border:1px solid var(--border);flex-shrink:0;}
+.bq-name{font-size:.8rem;font-weight:600;flex:1;min-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bq-status{font-size:.68rem;padding:3px 7px;border-radius:4px;white-space:nowrap;}
+.bq-status.pending{background:rgba(255,171,64,.12);color:var(--amber);}
+.bq-status.done{background:rgba(92,159,212,.12);color:var(--blue2);}
+.ze-outer{width:100%;overflow:auto;max-height:68vh;border-radius:10px;background:#000;border:2px solid rgba(229,57,53,.4);margin-bottom:10px;cursor:crosshair;user-select:none;position:relative;}
+.ze-inner{position:relative;display:inline-block;}
+#ze-canvas{display:block;}
+.drag-rect{position:absolute;border:3px solid #ff5252;background:rgba(229,57,53,.15);pointer-events:none;display:none;}
+.drag-label{position:absolute;top:-22px;left:0;background:var(--ac);color:#fff;font-size:.62rem;font-weight:700;padding:2px 6px;border-radius:3px;white-space:nowrap;}
+.font-prev-box{background:#0d0d15;border:1px solid var(--border);border-radius:8px;margin-top:8px;min-height:60px;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.grad-check-label{display:flex;align-items:center;gap:6px;font-size:.77rem;color:var(--muted);cursor:pointer;}
+.grad-check-label input[type=checkbox]{accent-color:var(--ac);width:14px;height:14px;}
+.ib{background:rgba(229,57,53,.04);border:1px solid rgba(229,57,53,.18);border-radius:8px;padding:10px 14px;font-size:.8rem;color:var(--muted);margin-bottom:12px;line-height:1.7;}
+.ib strong{color:var(--ac);}
+.ib.blue{background:rgba(92,159,212,.04);border-color:rgba(92,159,212,.18);}
+.ib.blue strong{color:var(--blue2);}
+.ip{background:#0d0d15;border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:12px;max-height:200px;overflow-y:auto;}
+.ip table{font-size:.75rem;}.ip th{background:#141420;padding:5px 9px;}.ip td{padding:5px 9px;}
+.tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:13px;}
+.tab{padding:5px 12px;border-radius:20px;font-size:.72rem;font-weight:600;cursor:pointer;border:1px solid var(--border);color:var(--muted);transition:all .13s;background:transparent;font-family:'Outfit',sans-serif;}
+.tab:hover{border-color:var(--ac);color:var(--ac);}
+.tab.on{background:var(--ac);color:#fff;border-color:var(--ac);}
+.tc{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;}
+.tc:hover{border-color:rgba(229,57,53,.3);}
+.tc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:9px;flex-wrap:wrap;}
+.tc pre{white-space:pre-wrap;font-family:'Outfit',sans-serif;font-size:.79rem;color:var(--text);line-height:1.65;max-height:85px;overflow:hidden;position:relative;}
+.tc pre::after{content:'';position:absolute;bottom:0;left:0;right:0;height:20px;background:linear-gradient(transparent,var(--card2));}
+.reg-card{background:var(--card2);border:1px solid rgba(255,171,64,.3);border-radius:10px;padding:14px;margin-bottom:10px;}
+#login-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--dark);z-index:999;}
+.lc{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:40px;width:100%;max-width:380px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.7);}
+.ll{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;letter-spacing:3px;}
+.ll span{color:var(--ac);}
+.ls{font-size:.8rem;color:var(--muted);margin-bottom:26px;}
+.le{color:var(--red);font-size:.77rem;margin-bottom:9px;padding:7px 11px;background:rgba(255,82,82,.1);border-radius:6px;display:none;}
+#toast{position:fixed;bottom:24px;right:24px;z-index:9999;padding:9px 18px;border-radius:30px;font-weight:700;font-size:.81rem;opacity:0;transform:translateY(12px);transition:all .28s;pointer-events:none;}
+#toast.on{opacity:1;transform:translateY(0);}
+.prog-bar{width:100%;background:var(--card2);border-radius:4px;height:5px;margin-top:7px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--ac);transition:width .3s;border-radius:4px;}
+.sov{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;display:none;align-items:center;justify-content:center;}
+.sovbox{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:28px 36px;text-align:center;min-width:240px;}
+.sovbox .si{font-size:2rem;margin-bottom:8px;}
+.sovbox .sm2{font-size:.88rem;color:var(--muted);}
+.cfg-box{background:#0d0d15;border:1px solid rgba(105,240,174,.3);border-radius:10px;padding:18px;font-family:monospace;font-size:.78rem;color:var(--green);line-height:1.8;margin-bottom:14px;white-space:pre-wrap;}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="lc">
+    <div class="ll"><span>MEGA</span>PARI</div>
+    <div class="ls">Admin Panel · Cloud Connected</div>
+    <div class="fg" style="text-align:left;margin-bottom:12px">
+      <label>Password</label>
+      <input type="password" id="pw-in" placeholder="Enter admin password"/>
+    </div>
+    <div class="le" id="pw-err">❌ Incorrect password</div>
+    <button class="btn g" style="width:100%;justify-content:center;padding:11px" onclick="doLogin()">ENTER →</button>
+    <p style="margin-top:12px;font-size:.68rem;color:var(--muted)">Default: <strong style="color:var(--text)">admin123</strong></p>
+  </div>
+</div>
+
+<div id="sov" class="sov">
+  <div class="sovbox">
+    <div class="si">☁️</div>
+    <div class="sm2" id="sov-msg">Saving to Firestore…</div>
+    <div class="prog-bar" style="width:200px;margin:10px auto 0"><div class="prog-fill" id="sov-fill" style="width:0%"></div></div>
+  </div>
+</div>
+
+<div class="wrap" id="panel" style="display:none">
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-t" onclick="window.open('index.html','_blank')">MEGA<span>PARI</span></div>
+      <div class="logo-s">Admin Panel</div>
+      <div class="cloud-chip cc-wait" id="cloud-chip">⏳ Connecting…</div>
+    </div>
+    <div class="nav on" onclick="go('affiliates',this)">👥 Affiliates</div>
+    <div class="nav" onclick="go('banners',this)">🖼️ Banners</div>
+    <div class="nav" onclick="go('texts',this)">✍️ Post Captions</div>
+    <div class="nav" onclick="go('download',this)">📥 Bulk Download</div>
+    <div class="nav" onclick="go('registrations',this)">📋 Registrations <span class="nav-badge" id="reg-badge" style="display:none">0</span></div>
+    <div class="nav" onclick="go('formgen',this)">✉️ Form Generator</div>
+    <div class="nav-sep"></div>
+    <div class="nav" onclick="go('settings',this)">⚙️ Settings</div>
+    <div class="nav" onclick="window.open('index.html','_blank')">🔗 View Portal</div>
+    <div class="nav" onclick="doLogout()">🚪 Logout</div>
+  </nav>
+  <main class="main">
+
+    <!-- AFFILIATES -->
+    <div class="page on" id="page-affiliates">
+      <div class="ph"><h1>👥 AFFILIATES</h1><p>Data syncs instantly to all devices via Firestore</p></div>
+      <div class="card">
+        <div class="card-title">➕ <span id="aff-form-title">Add Affiliate</span></div>
+        <input type="hidden" id="aff-orig-id">
+        <div class="row">
+          <div class="fg"><label>Affiliate ID *</label><input type="text" id="a-id" placeholder="AFF12345"/></div>
+          <div class="fg"><label>Display Name</label><input type="text" id="a-name" placeholder="John Doe"/></div>
+          <div class="fg"><label>Promo Code *</label><input type="text" id="a-promo" placeholder="JOHN50"/></div>
+        </div>
+        <div class="row">
+          <div class="fg"><label>Player / Referral Link</label><input type="text" id="a-player" placeholder="https://..."/></div>
+          <div class="fg"><label>Android APK Link</label><input type="text" id="a-apk" placeholder="https://..."/></div>
+          <div class="fg"><label>iOS App Link</label><input type="text" id="a-ios" placeholder="https://..."/></div>
+        </div>
+        <div class="row">
+          <div class="fg"><label>Language — sets which banners &amp; captions this affiliate sees</label>
+            <select id="a-lang">
+              <option value="en">🇬🇧 English</option><option value="fr">🇫🇷 French</option>
+              <option value="ar">🇸🇦 Arabic</option><option value="es">🇪🇸 Spanish</option><option value="pt">🇧🇷 Portuguese</option>
+            </select>
+          </div>
+        </div>
+        <div class="br"><button class="btn g" onclick="saveAff()">💾 Save Affiliate</button><button class="btn o" onclick="clearAff()">✕ Clear</button></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Bulk Import from Excel</div>
+        <div class="ib">Columns: <strong>A</strong>=ID · <strong>B</strong>=Name · <strong>C</strong>=Promo Code · <strong>D</strong>=Player Link · <strong>E</strong>=APK · <strong>F</strong>=iOS · <strong>G</strong>=Language (en/fr/ar/es/pt)</div>
+        <div class="dropzone" onclick="document.getElementById('xl-in').click()"><div class="dz-icon">📂</div><p><strong>Click to choose Excel file</strong><br>.xlsx or .xls</p></div>
+        <input type="file" id="xl-in" accept=".xlsx,.xls" style="display:none" onchange="xlImport()"/>
+        <div id="xl-prev" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:8px">
+            <span id="xl-count" style="color:var(--ac);font-weight:700;font-size:.85rem"></span>
+            <div class="br"><button class="btn g sm" onclick="xlConfirm()">✅ Import All</button><button class="btn r sm" onclick="xlCancel()">✕ Cancel</button></div>
+          </div>
+          <div class="ip" id="xl-table"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 All Affiliates (<span id="aff-cnt">0</span>)</div>
+        <div class="tw"><table><thead><tr><th>ID</th><th>Name</th><th>Promo</th><th>Lang</th><th>Links</th><th>Portal Link</th><th>Actions</th></tr></thead><tbody id="aff-tbody"><tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">Loading from Firestore…</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- BANNERS -->
+    <div class="page" id="page-banners">
+      <div class="ph"><h1>🖼️ BANNERS</h1><p>Banners auto-remove 35h after end date · Images stored in Firestore</p></div>
+      <div class="card">
+        <div class="card-title">⚙️ Batch Settings</div>
+        <div class="row">
+          <div class="fg"><label>Language *</label>
+            <select id="ban-lang"><option value="en">🇬🇧 English</option><option value="fr">🇫🇷 French</option><option value="ar">🇸🇦 Arabic</option><option value="es">🇪🇸 Spanish</option><option value="pt">🇧🇷 Portuguese</option></select></div>
+          <div class="fg"><label>Banner Type *</label>
+            <select id="ban-type" onchange="toggleDates()"><option value="dated">📅 Dated</option><option value="evergreen">♾️ Evergreen</option></select></div>
+          <div class="fg" id="sg-start"><label>Start Date</label><input type="date" id="ban-start"/></div>
+          <div class="fg" id="sg-end"><label>End Date</label><input type="date" id="ban-end"/></div>
+        </div>
+        <div class="ib">📌 <strong>Language</strong> controls which affiliates see these banners. Match the language to your affiliates' language setting.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">⬆️ Upload Images</div>
+        <div class="dropzone" id="banner-dz" onclick="document.getElementById('ban-files').click()" ondragover="dzDrag(event,true)" ondragleave="dzDrag(event,false)" ondrop="dzDrop(event)">
+          <div class="dz-icon">🖼️</div><p><strong>Click or drag & drop</strong><br>PNG / JPG — multiple at once</p>
+        </div>
+        <input type="file" id="ban-files" accept="image/*" multiple style="display:none" onchange="addBanners()"/>
+        <div id="banner-queue"></div>
+        <div class="br" style="margin-top:12px;display:none" id="save-all-row">
+          <button class="btn g" onclick="saveAllBanners()">☁️ Save All to Firestore</button>
+          <button class="btn r" onclick="clearQueue()">🗑️ Clear Queue</button>
+          <span id="save-prog" style="font-size:.79rem;color:var(--muted)"></span>
+        </div>
+      </div>
+
+      <!-- Zone editor -->
+      <div id="zone-editor" style="display:none">
+        <div class="card" style="border-color:rgba(229,57,53,.5)">
+          <div class="card-title" style="margin-bottom:7px">🎯 Set Promo Zone — <span id="ze-banner-name" style="color:var(--text);text-transform:none;letter-spacing:0;font-weight:400"></span></div>
+          <div class="ib" style="margin-bottom:9px"><strong>Drag a rectangle</strong> on the image to define where the promo code appears.</div>
+          <div class="ze-outer" id="ze-outer"><div class="ze-inner" id="ze-inner"><canvas id="ze-canvas"></canvas><div class="drag-rect" id="drag-rect"><div class="drag-label">PROMO CODE ZONE</div></div></div></div>
+          <div id="ze-controls" style="display:none">
+            <div class="row" style="margin-top:11px">
+              <div class="fg"><label>Font</label>
+                <select id="ze-font" onchange="updateFontPreview()">
+                  <option value="Bebas Neue">Bebas Neue</option><option value="Anton">Anton</option><option value="Russo One">Russo One</option>
+                  <option value="Teko">Teko</option><option value="Barlow Condensed">Barlow Condensed</option>
+                  <option value="Black Han Sans">Black Han Sans</option><option value="Arial Black">Arial Black</option><option value="Impact">Impact</option>
+                </select></div>
+              <div class="fg"><label>Size px</label><input type="number" id="ze-size" value="36" min="6" max="400" onchange="updateFontPreview()"/></div>
+              <div class="fg"><label>Align</label><select id="ze-align" onchange="updateFontPreview()"><option value="center">Center</option><option value="left">Left</option><option value="right">Right</option></select></div>
+            </div>
+            <div style="margin-bottom:12px"><label class="grad-check-label"><input type="checkbox" id="ze-autofit" checked onchange="updateFontPreview()"/><strong style="color:var(--blue2)">Auto-fit text to zone</strong></label></div>
+            <div class="row" style="margin-bottom:6px">
+              <div class="fg"><label>Color</label><input type="color" id="ze-color" value="#ffffff" onchange="updateFontPreview()"/></div>
+              <div class="fg"><label>Gradient</label><div style="margin-top:6px"><label class="grad-check-label"><input type="checkbox" id="ze-gradient" onchange="toggleGradUI()"/>Enable</label></div></div>
+              <div class="fg" id="grad-c2" style="display:none"><label>End Color</label><input type="color" id="ze-color2" value="#ff9800" onchange="updateFontPreview()"/></div>
+              <div class="fg" id="grad-dir" style="display:none"><label>Direction</label><select id="ze-grad-dir" onchange="updateFontPreview()"><option value="lr">L→R</option><option value="tb">T→B</option><option value="diag">Diagonal</option></select></div>
+            </div>
+            <div class="font-prev-box"><canvas id="font-preview" width="400" height="70"></canvas></div>
+            <div class="fg" style="margin-top:9px;margin-bottom:11px"><label>Zone coords</label><input type="text" id="ze-info" readonly style="font-size:.74rem;color:var(--muted)"/></div>
+          </div>
+          <div class="br">
+            <button class="btn g" onclick="confirmZone()">✅ Confirm Zone</button>
+            <button class="btn o" onclick="clearZoneRect()">↩️ Redo</button>
+            <button class="btn r sm" onclick="closeZoneEditor()">✕ Close</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Saved Banners (<span id="ban-cnt">0</span>)</div>
+        <div class="tw"><table><thead><tr><th>Preview</th><th>Type</th><th>Language</th><th>Dates</th><th>Zone</th><th>Caption</th><th>Actions</th></tr></thead><tbody id="ban-tbody"><tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">Loading…</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- TEXTS -->
+    <div class="page" id="page-texts">
+      <div class="ph"><h1>✍️ POST CAPTIONS</h1><p>Caption templates for each language</p></div>
+      <div class="card">
+        <div class="card-title"><span id="txt-icon">➕</span> <span id="txt-title">Add Caption</span></div>
+        <input type="hidden" id="txt-edit-id">
+        <div class="ib">Placeholders: <strong>{{Player link}}</strong> · <strong>{{apk link}}</strong> · <strong>{{iOS link}}</strong> · <strong>{{Promo code}}</strong></div>
+        <div class="row"><div class="fg"><label>Language *</label>
+          <select id="txt-lang"><option value="en">🇬🇧 English</option><option value="fr">🇫🇷 French</option><option value="ar">🇸🇦 Arabic</option><option value="es">🇪🇸 Spanish</option><option value="pt">🇧🇷 Portuguese</option></select></div></div>
+        <div class="fg" style="margin-bottom:12px"><label>Caption Text</label><textarea id="txt-body" rows="8"></textarea></div>
+        <div class="br">
+          <button class="btn g" onclick="saveTxt()">💾 Save Caption</button>
+          <button class="btn o" onclick="clearTxt()">✕ Clear</button>
+          <span id="txt-edit-note" style="display:none;font-size:.75rem;color:var(--amber)">✏️ Editing</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Bulk Import from Excel</div>
+        <div class="ib">Format — <strong>A</strong>=Post Label · <strong>B</strong>=EN · <strong>C</strong>=FR · <strong>D</strong>=AR · <strong>E</strong>=ES · <strong>F</strong>=PT</div>
+        <div class="dropzone" onclick="document.getElementById('txt-xl-in').click()"><div class="dz-icon">📊</div><p><strong>Import captions Excel</strong><br>POST | EN | FR | AR | ES | PT</p></div>
+        <input type="file" id="txt-xl-in" accept=".xlsx,.xls" style="display:none" onchange="txtXlImport()"/>
+        <div id="txt-xl-prev" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:8px">
+            <span id="txt-xl-count" style="color:var(--ac);font-weight:700;font-size:.85rem"></span>
+            <div class="br"><button class="btn g sm" onclick="txtXlConfirm()">✅ Import</button><button class="btn r sm" onclick="txtXlCancel()">✕ Cancel</button></div>
+          </div>
+          <div class="ip" id="txt-xl-table"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 All Captions (<span id="txt-cnt">0</span>)</div>
+        <div class="tabs">
+          <button class="tab on" onclick="filterTxt('all',this)">All</button>
+          <button class="tab" onclick="filterTxt('en',this)">🇬🇧 EN</button>
+          <button class="tab" onclick="filterTxt('fr',this)">🇫🇷 FR</button>
+          <button class="tab" onclick="filterTxt('ar',this)">🇸🇦 AR</button>
+          <button class="tab" onclick="filterTxt('es',this)">🇪🇸 ES</button>
+          <button class="tab" onclick="filterTxt('pt',this)">🇧🇷 PT</button>
+        </div>
+        <div id="txt-list"></div>
+      </div>
+    </div>
+
+    <!-- BULK DOWNLOAD -->
+    <div class="page" id="page-download">
+      <div class="ph"><h1>📥 BULK DOWNLOAD</h1><p>Generate stamped banners for all affiliates</p></div>
+      <div class="card">
+        <div class="card-title">⚙️ Filters</div>
+        <div class="row">
+          <div class="fg"><label>Language</label><select id="dl-lang" onchange="populateDlAffs()"><option value="all">All Languages</option><option value="en">English</option><option value="fr">French</option><option value="ar">Arabic</option><option value="es">Spanish</option><option value="pt">Portuguese</option></select></div>
+          <div class="fg"><label>Type</label><select id="dl-type"><option value="all">All</option><option value="dated">Dated</option><option value="evergreen">Evergreen</option></select></div>
+          <div class="fg"><label>Affiliate</label><select id="dl-aff"><option value="all">All</option></select></div>
+          <div class="fg"><label>ZIP Structure</label><select id="dl-structure"><option value="flat">One ZIP</option><option value="perAff">Per Affiliate</option></select></div>
+        </div>
+        <div class="br">
+          <button class="btn g" onclick="startBulkDownload()">📦 Generate & Download</button>
+          <button class="btn b" onclick="previewDownload()">👁 Preview List</button>
+        </div>
+        <div id="dl-progress" style="display:none;margin-top:13px">
+          <div style="font-size:.8rem;color:var(--muted);margin-bottom:5px" id="dl-prog-text">Preparing…</div>
+          <div class="prog-bar"><div class="prog-fill" id="dl-prog-fill" style="width:0"></div></div>
+        </div>
+        <div id="dl-preview-list" style="margin-top:13px;display:none"></div>
+      </div>
+    </div>
+
+    <!-- REGISTRATIONS -->
+    <div class="page" id="page-registrations">
+      <div class="ph"><h1>📋 REGISTRATIONS</h1><p>Users who registered from the portal</p></div>
+      <div class="card">
+        <div class="card-title">⏳ Pending (<span id="pending-cnt">0</span>)</div>
+        <div id="pending-list"><div style="color:var(--muted);text-align:center;padding:24px">Loading…</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Approved (<span id="approved-cnt">0</span>)</div>
+        <div id="approved-list"></div>
+      </div>
+    </div>
+
+    <!-- FORM GENERATOR — local only, never touches Firestore -->
+    <div class="page" id="page-formgen">
+      <div class="ph">
+        <h1>✉️ FORM GENERATOR</h1>
+        <p>Generate welcome messages, post templates &amp; summary tables for new affiliates. Nothing here is saved — it's a copy-paste tool only.</p>
+      </div>
+
+      <style>
+        /* Scoped styles — all prefixed with fg- to avoid collisions */
+        #page-formgen .fg-form{background:var(--card2);border:1px solid var(--border);border-radius:13px;padding:24px;margin-bottom:18px;}
+        #page-formgen .fg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:16px;}
+        #page-formgen .fg-group{display:flex;flex-direction:column;gap:5px;}
+        #page-formgen .fg-group label{font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;}
+        #page-formgen .fg-group input,
+        #page-formgen .fg-group select,
+        #page-formgen .fg-group textarea{background:#0d0d15;border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 12px;font-family:'Outfit',sans-serif;font-size:.86rem;outline:none;transition:border-color .2s;width:100%;}
+        #page-formgen .fg-group input:focus,
+        #page-formgen .fg-group select:focus,
+        #page-formgen .fg-group textarea:focus{border-color:var(--blue2);}
+        #page-formgen .fg-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+        #page-formgen .fg-btn-gen{background:linear-gradient(135deg,var(--blue2) 0%,#b388ff 100%);color:#000;font-weight:700;padding:10px 22px;border:none;border-radius:8px;font-family:'Outfit',sans-serif;font-size:.85rem;cursor:pointer;letter-spacing:.5px;text-transform:uppercase;transition:all .2s;}
+        #page-formgen .fg-btn-gen:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(130,177,255,.35);}
+        #page-formgen .fg-btn-demo{background:rgba(255,255,255,.05);color:var(--muted);padding:10px 18px;border:1px solid var(--border);border-radius:8px;font-family:'Outfit',sans-serif;font-size:.85rem;cursor:pointer;transition:all .2s;text-transform:uppercase;letter-spacing:.5px;}
+        #page-formgen .fg-btn-demo:hover{background:rgba(255,255,255,.09);color:var(--text);}
+        #page-formgen .fg-outputs{display:flex;flex-direction:column;gap:18px;}
+        #page-formgen .fg-out-block{background:var(--card2);border:1px solid var(--border);border-radius:13px;padding:20px;}
+        #page-formgen .fg-out-title{font-size:.76rem;font-weight:700;color:var(--blue2);text-transform:uppercase;letter-spacing:2px;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+        #page-formgen .fg-out-title::before{content:'';width:4px;height:18px;background:linear-gradient(135deg,var(--blue2),#b388ff);border-radius:2px;flex-shrink:0;}
+        #page-formgen .fg-rendered{background:#0d0d15;border:1px solid var(--border);border-radius:8px;padding:16px;line-height:1.85;font-size:.84rem;min-height:120px;}
+        #page-formgen .fg-rendered p{margin-bottom:13px;}
+        #page-formgen .fg-rendered p:last-child{margin-bottom:0;}
+        #page-formgen .fg-rendered strong{color:var(--blue2);font-weight:700;}
+        #page-formgen .fg-rendered .fg-sec{font-size:.72rem;font-weight:700;color:var(--green,#69f0ae);margin:18px 0 9px;text-transform:uppercase;letter-spacing:1px;}
+        #page-formgen .fg-rendered ul{margin:10px 0 10px 20px;}
+        #page-formgen .fg-rendered li{margin-bottom:7px;}
+        #page-formgen .fg-rendered .fg-divider{border-top:1px solid var(--border);margin:16px 0;}
+        #page-formgen .fg-textarea{background:#0d0d15;border:1px solid var(--border);border-radius:8px;color:var(--text);padding:14px;font-family:'Courier New',monospace;font-size:.77rem;line-height:1.7;min-height:360px;resize:vertical;width:100%;outline:none;}
+        #page-formgen .fg-textarea:focus{border-color:var(--blue2);}
+        #page-formgen .fg-copy-btn{background:rgba(105,240,174,.12);color:#69f0ae;border:1px solid rgba(105,240,174,.25);border-radius:7px;padding:7px 16px;font-family:'Outfit',sans-serif;font-size:.73rem;font-weight:700;cursor:pointer;letter-spacing:.5px;text-transform:uppercase;transition:all .2s;margin-top:12px;}
+        #page-formgen .fg-copy-btn:hover{background:rgba(105,240,174,.22);transform:translateY(-1px);}
+        #page-formgen .fg-copy-btn.fg-ok{background:#69f0ae;color:#000;}
+        #page-formgen .fg-table-wrap{overflow-x:auto;margin-top:2px;}
+        #page-formgen table.fg-table{width:100%;border-collapse:collapse;font-size:.76rem;}
+        #page-formgen table.fg-table thead th{background:#0d0d15;padding:9px 11px;text-align:left;font-weight:700;font-size:.62rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:2px solid var(--blue2);}
+        #page-formgen table.fg-table tbody td{padding:9px 11px;border-bottom:1px solid var(--border);color:var(--text);}
+        #page-formgen .fg-table-ctrls{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:13px;}
+        #page-formgen .fg-table-ctrls label{font-size:.7rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:6px;}
+        #page-formgen .fg-notes{width:100%;background:#0d0d15;border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 12px;font-family:'Outfit',sans-serif;font-size:.84rem;margin-top:11px;resize:vertical;outline:none;}
+        #page-formgen .fg-notes:focus{border-color:var(--blue2);}
+      </style>
+
+      <!-- ── INPUT FORM ── -->
+      <div class="fg-form">
+        <div class="card-title" style="margin-bottom:18px">📋 Affiliate Details</div>
+        <div class="fg-grid">
+          <div class="fg-group"><label>AFF ID</label><input id="fg-affId" placeholder="e.g. 4839881"/></div>
+          <div class="fg-group"><label>Referral Link</label><input id="fg-referralLink" placeholder="https://..."/></div>
+          <div class="fg-group"><label>Android App Link</label><input id="fg-androidLink" placeholder="https://..."/></div>
+          <div class="fg-group"><label>Promo Code</label><input id="fg-promoCode" placeholder="e.g. JOHN50"/></div>
+          <div class="fg-group"><label>Telegram Support Link</label><input id="fg-joinUs" placeholder="https://t.me/..."/></div>
+          <div class="fg-group"><label>Traffic Source</label><input id="fg-trafficSource" placeholder="e.g. Facebook Ads"/></div>
+          <div class="fg-group"><label>Deal</label><input id="fg-deal" placeholder="e.g. 50% revshare"/></div>
+          <div class="fg-group"><label>Country / GEO</label><input id="fg-country" placeholder="e.g. Nigeria"/></div>
+          <div class="fg-group"><label>Email</label><input id="fg-email" placeholder="affiliate@example.com"/></div>
+          <div class="fg-group"><label>Contact Handle</label><input id="fg-contact" placeholder="@handle"/></div>
+          <div class="fg-group"><label>Megapari URL 1 (Post link)</label><input id="fg-link1" value="https://4839881.megapari-964205.net/"/></div>
+          <div class="fg-group"><label>Megapari URL 2 (APK link)</label><input id="fg-link2" value="https://refpazitag.top/L?tag=d_4839881m_54987c_&site=4839881&ad=54987"/></div>
+        </div>
+        <div class="fg-actions">
+          <button class="fg-btn-gen" onclick="fgGenerate()">⚡ Generate All Outputs</button>
+          <button class="fg-btn-demo" onclick="fgFillDemo()">🧪 Fill Demo Values</button>
+          <button class="fg-btn-demo" onclick="fgClear()">✕ Clear Form</button>
+        </div>
+      </div>
+
+      <!-- ── OUTPUTS (hidden until generated) ── -->
+      <div class="fg-outputs" id="fg-outputs" style="display:none">
+
+        <!-- Output 1 -->
+        <div class="fg-out-block">
+          <div class="fg-out-title">Output 1 — Account Ready Message (Full)</div>
+          <div class="fg-rendered" id="fg-out1"></div>
+          <button class="fg-copy-btn" id="fg-copy1" onclick="fgCopyRendered('fg-out1','fg-copy1')">📋 Copy Output 1</button>
+        </div>
+
+        <!-- Output 2 -->
+        <div class="fg-out-block">
+          <div class="fg-out-title">Output 2 — Welcome Message (Short)</div>
+          <div class="fg-rendered" id="fg-out2"></div>
+          <button class="fg-copy-btn" id="fg-copy2" onclick="fgCopyRendered('fg-out2','fg-copy2')">📋 Copy Output 2</button>
+        </div>
+
+        <!-- Output 3 -->
+        <div class="fg-out-block">
+          <div class="fg-out-title">Output 3 — 7-Day Post Samples with Links</div>
+          <textarea class="fg-textarea" id="fg-out3" readonly></textarea>
+          <button class="fg-copy-btn" id="fg-copy3" onclick="fgCopyTextarea('fg-out3','fg-copy3')">📋 Copy Output 3</button>
+        </div>
+
+        <!-- Output 4 -->
+        <div class="fg-out-block">
+          <div class="fg-out-title">Output 4 — Summary Table</div>
+          <div class="fg-table-wrap">
+            <table class="fg-table">
+              <thead><tr id="fg-tableHead"></tr></thead>
+              <tbody><tr id="fg-tableRow"></tr></tbody>
+            </table>
+          </div>
+          <div class="fg-table-ctrls">
+            <label>SOURCE:
+              <select id="fg-sourceSelect" style="background:#0d0d15;border:1px solid var(--border);border-radius:6px;color:var(--text);padding:5px 9px;font-family:'Outfit',sans-serif;font-size:.8rem;outline:none;">
+                <option>SEO</option><option>PPC</option><option>InApp</option><option>ASO</option>
+                <option>Influence</option><option>Retarget</option><option>FB</option><option>TG Sport</option>
+                <option>Social</option><option>Youtube</option>
+              </select>
+            </label>
+            <label>BRAND:
+              <select id="fg-brandSelect" style="background:#0d0d15;border:1px solid var(--border);border-radius:6px;color:var(--text);padding:5px 9px;font-family:'Outfit',sans-serif;font-size:.8rem;outline:none;">
+                <option>Megapari</option>
+              </select>
+            </label>
+          </div>
+          <textarea id="fg-notes" class="fg-notes" rows="3" placeholder="Add notes (optional)"></textarea>
+          <button class="fg-copy-btn" id="fg-copy4" onclick="fgCopyTable()">📋 Copy Output 4 (Tab-separated)</button>
+        </div>
+
+      </div><!-- /fg-outputs -->
+    </div><!-- /page-formgen -->
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="ph"><h1>⚙️ SETTINGS</h1></div>
+      <div class="card">
+        <div class="card-title">🔐 Change Password</div>
+        <div class="row">
+          <div class="fg"><label>Current Password</label><input type="password" id="cur-pw" placeholder="Current password"/></div>
+          <div class="fg"><label>New Password</label><input type="password" id="new-pw" placeholder="Min 4 chars"/></div>
+          <div class="fg"><label>Confirm New</label><input type="password" id="conf-pw" placeholder="Repeat new"/></div>
+        </div>
+        <button class="btn g" onclick="changePw()">🔒 Update Password</button>
+      </div>
+      <div class="card">
+        <div class="card-title">💾 Backup & Migrate</div>
+        <p style="color:var(--muted);font-size:.82rem;margin-bottom:14px">Export a JSON backup, or push existing localStorage data into Firestore.</p>
+        <div class="br">
+          <button class="btn g" onclick="exportData()">📤 Export JSON Backup</button>
+          <button class="btn a" onclick="document.getElementById('imp-in').click()">📥 Import JSON to Firestore</button>
+          <button class="btn b" onclick="migrateLocalStorage()">🔄 Migrate localStorage → Firestore</button>
+          <button class="btn r" onclick="clearAll()">🗑️ Clear All Firestore Data</button>
+        </div>
+        <input type="file" id="imp-in" accept=".json" style="display:none" onchange="importData()"/>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Stats</div>
+        <div id="stats-area" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:11px;margin-top:4px"></div>
+      </div>
+    </div>
+  </main>
+</div>
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+// Wait for Firebase module to initialise
+// ══════════════════════════════════════════════════
+let FS_READY = false;
+window.addEventListener('firebase-ready', () => { FS_READY = true; });
+
+// Firestore proxy helpers (call via window.FS once ready)
+async function fsGet(k)   { return window.FS.fsGet(k); }
+async function fsSet(k,v) { return window.FS.fsSet(k,v); }
+async function fsDel(k)   { return window.FS.fsDel(k); }
+
+// ── In-memory cache so we don't re-fetch on every render ──
+const _mem = {};
+async function memGet(key, def=[]) {
+  if (_mem[key] !== undefined) return _mem[key];
+  const doc = await fsGet(key);
+  _mem[key] = (doc && doc.list) ? doc.list : def;
+  return _mem[key];
+}
+async function memSet(key, list) {
+  _mem[key] = list;
+  return fsSet(key, { list });
+}
+function memInvalidate(key) { delete _mem[key]; }
+
+// Helpers
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+const LANGS={en:'English',fr:'French',ar:'Arabic',es:'Spanish',pt:'Portuguese'};
+
+// ── Saving overlay ──
+function showSov(msg,pct){ const o=document.getElementById('sov');o.style.display='flex';document.getElementById('sov-msg').textContent=msg||'Saving…';document.getElementById('sov-fill').style.width=(pct||30)+'%'; }
+function hideSov(){ document.getElementById('sov').style.display='none'; }
+
+function setCloudChip(state, txt){
+  const c=document.getElementById('cloud-chip');
+  c.className='cloud-chip '+({'ok':'cc-ok','err':'cc-err','wait':'cc-wait'}[state]||'cc-wait');
+  c.textContent=txt;
+}
+
+// ══════════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════════
+async function doLogin(){
+  const pw = document.getElementById('pw-in').value;
+  if (!pw) return;
+  document.querySelector('#login-screen button').textContent = '⏳ Checking…';
+  try {
+    const cfg = await fsGet('config');
+    const stored = (cfg && cfg.adminpw) ? cfg.adminpw : 'admin123';
+    if (pw === stored) {
+      document.getElementById('login-screen').style.display='none';
+      document.getElementById('panel').style.display='flex';
+      setCloudChip('ok','☁️ Firestore Connected');
+      initPanel();
+    } else {
+      const el=document.getElementById('pw-err');el.style.display='block';
+      setTimeout(()=>el.style.display='none',3000);
+    }
+  } catch(e) {
+    setCloudChip('err','⚠️ Firestore Error');
+    alert('Cannot connect to Firestore. Did you paste your Firebase config? Error: '+e.message);
+  } finally {
+    document.querySelector('#login-screen button').textContent = 'ENTER →';
+  }
+}
+document.getElementById('pw-in').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+function doLogout(){ document.getElementById('login-screen').style.display='flex';document.getElementById('panel').style.display='none';document.getElementById('pw-in').value='';Object.keys(_mem).forEach(k=>delete _mem[k]); }
+
+async function initPanel(){
+  await ensureDefTxts();
+  renderAffs(); renderBanners(); renderTxts(); renderRegs(); updateRegBadge();
+}
+
+// ══════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════
+function go(p,el){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.nav').forEach(x=>x.classList.remove('on'));
+  document.getElementById('page-'+p).classList.add('on');
+  if(el)el.classList.add('on');
+  if(p==='settings')renderStats();
+  if(p==='texts'){txtFilter='all';renderTxts();}
+  if(p==='banners')renderBanners();
+  if(p==='download')populateDlAffs();
+  if(p==='registrations')renderRegs();
+}
+
+// ══════════════════════════════════════════════════
+// AFFILIATES
+// ══════════════════════════════════════════════════
+async function saveAff(){
+  const origId=document.getElementById('aff-orig-id').value;
+  const id=document.getElementById('a-id').value.trim();
+  const promo=document.getElementById('a-promo').value.trim();
+  if(!id||!promo){toast('ID and Promo Code required','err');return;}
+  showSov('Saving affiliate to Firestore…',40);
+  let affs=await memGet('affiliates');
+  const obj={id,name:document.getElementById('a-name').value.trim(),promoCode:promo,
+    playerLink:document.getElementById('a-player').value.trim(),
+    apkLink:document.getElementById('a-apk').value.trim(),
+    iosLink:document.getElementById('a-ios').value.trim(),
+    lang:document.getElementById('a-lang').value};
+  if(origId){affs=affs.map(a=>a.id===origId?obj:a);}
+  else{if(affs.find(a=>a.id.toLowerCase()===id.toLowerCase())){hideSov();toast('ID already exists','err');return;}affs.push(obj);}
+  await memSet('affiliates',affs);
+  hideSov();clearAff();renderAffs();toast('✅ Affiliate saved to cloud!');
+}
+function clearAff(){
+  ['a-id','a-name','a-promo','a-player','a-apk','a-ios'].forEach(f=>document.getElementById(f).value='');
+  document.getElementById('aff-orig-id').value='';
+  document.getElementById('aff-form-title').textContent='Add Affiliate';
+}
+async function editAff(id){
+  const affs=await memGet('affiliates');const a=affs.find(x=>x.id===id);if(!a)return;
+  document.getElementById('aff-orig-id').value=a.id;document.getElementById('a-id').value=a.id;
+  document.getElementById('a-name').value=a.name||'';document.getElementById('a-promo').value=a.promoCode||'';
+  document.getElementById('a-player').value=a.playerLink||'';document.getElementById('a-apk').value=a.apkLink||'';
+  document.getElementById('a-ios').value=a.iosLink||'';document.getElementById('a-lang').value=a.lang||'en';
+  document.getElementById('aff-form-title').textContent='Edit: '+id;window.scrollTo({top:0,behavior:'smooth'});
+}
+async function delAff(id){
+  if(!confirm('Delete "'+id+'"?'))return;
+  showSov('Deleting…',40);
+  const affs=await memGet('affiliates');
+  await memSet('affiliates',affs.filter(a=>a.id!==id));
+  hideSov();renderAffs();toast('Deleted');
+}
+function getShareLink(affId){ return window.location.href.replace(/admin\.html.*/,'index.html')+'?aff='+encodeURIComponent(affId); }
+async function renderAffs(){
+  const affs=await memGet('affiliates');
+  document.getElementById('aff-cnt').textContent=affs.length;
+  const tb=document.getElementById('aff-tbody');
+  if(!affs.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">No affiliates yet</td></tr>';return;}
+  tb.innerHTML=affs.map(a=>{
+    const link=getShareLink(a.id);
+    return`<tr>
+      <td><strong style="color:var(--ac)">${eh(a.id)}</strong></td>
+      <td>${eh(a.name||'—')}</td>
+      <td><span class="bx bx-r">${eh(a.promoCode)}</span></td>
+      <td><span class="bx bx-b">${LANGS[a.lang]||a.lang||'?'}</span></td>
+      <td style="font-size:.72rem">${a.playerLink?`<a href="${eh(a.playerLink)}" target="_blank" style="color:var(--muted)">↗</a>`:'—'}</td>
+      <td><div style="display:flex;align-items:center;gap:5px">
+        <input type="text" value="${eh(link)}" readonly style="font-size:.64rem;padding:3px 6px;width:145px;color:var(--muted)" onclick="this.select()"/>
+        <button class="btn b sm" onclick="navigator.clipboard.writeText('${ea(link)}').then(()=>toast('Copied!'))">📋</button>
+      </div></td>
+      <td><div class="br"><button class="btn a sm" onclick="editAff('${ea(a.id)}')">✏️</button><button class="btn r sm" onclick="delAff('${ea(a.id)}')">🗑️</button></div></td>
+    </tr>`;
+  }).join('');
+}
+
+let xlRows=[];
+function xlImport(){
+  const file=document.getElementById('xl-in').files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      const isHdr=r=>r[0]&&String(r[0]).toLowerCase().match(/id|affiliate|name/);
+      const data=rows.filter((r,i)=>!(i===0&&isHdr(r))).filter(r=>String(r[0]||'').trim());
+      xlRows=data.map(r=>({id:String(r[0]||'').trim(),name:String(r[1]||'').trim(),promoCode:String(r[2]||'').trim(),
+        playerLink:String(r[3]||'').trim(),apkLink:String(r[4]||'').trim(),iosLink:String(r[5]||'').trim(),
+        lang:String(r[6]||'en').trim().toLowerCase()||'en'})).filter(r=>r.id&&r.promoCode);
+      if(!xlRows.length){toast('No valid rows','err');return;}
+      document.getElementById('xl-count').textContent=`✅ ${xlRows.length} affiliates ready`;
+      document.getElementById('xl-table').innerHTML=`<table><thead><tr><th>ID</th><th>Name</th><th>Promo</th><th>Lang</th></tr></thead><tbody>${xlRows.slice(0,20).map(r=>`<tr><td>${eh(r.id)}</td><td>${eh(r.name||'—')}</td><td>${eh(r.promoCode)}</td><td>${eh(r.lang)}</td></tr>`).join('')}</tbody></table>`;
+      document.getElementById('xl-prev').style.display='block';
+    }catch(err){toast('Error: '+err.message,'err');}
+  };
+  reader.readAsArrayBuffer(file);
+}
+async function xlConfirm(){
+  showSov('Importing affiliates to Firestore…',20);
+  let affs=await memGet('affiliates');let added=0,upd=0;
+  xlRows.forEach(r=>{const i=affs.findIndex(a=>a.id.toLowerCase()===r.id.toLowerCase());if(i>=0){affs[i]=r;upd++;}else{affs.push(r);added++;}});
+  await memSet('affiliates',affs);
+  xlCancel();hideSov();renderAffs();toast(`✅ ${added} added, ${upd} updated in Firestore`);
+}
+function xlCancel(){xlRows=[];document.getElementById('xl-in').value='';document.getElementById('xl-prev').style.display='none';}
+
+// ══════════════════════════════════════════════════
+// BANNERS
+// ══════════════════════════════════════════════════
+let queue=[],activeQIdx=null,zeState={isDragging:false,start:{x:0,y:0},zone:null},zeScale=1,_zeL={};
+
+function dzDrag(e,on){e.preventDefault();document.getElementById('banner-dz').classList.toggle('drag',on);}
+function dzDrop(e){e.preventDefault();document.getElementById('banner-dz').classList.remove('drag');handleFiles(e.dataTransfer.files);}
+function addBanners(){handleFiles(document.getElementById('ban-files').files);}
+function handleFiles(files){
+  if(!files||!files.length)return;
+  Array.from(files).forEach(f=>{
+    if(!f.type.startsWith('image/'))return;
+    const id=uid();const entry={id,name:f.name,dataURL:null,zone:null,status:'pending'};queue.push(entry);
+    const reader=new FileReader();reader.onload=ev=>{entry.dataURL=ev.target.result;renderQueue();};reader.readAsDataURL(f);
+  });
+  renderQueue();
+}
+function renderQueue(){
+  const qEl=document.getElementById('banner-queue');const saveRow=document.getElementById('save-all-row');
+  if(!queue.length){qEl.innerHTML='';saveRow.style.display='none';return;}
+  saveRow.style.display='flex';
+  qEl.innerHTML=queue.map((item,i)=>`<div class="bq-item">
+    <div class="bq-top">
+      ${item.dataURL?`<img class="bq-thumb" src="${item.dataURL}"/>`:'<div class="bq-thumb" style="background:var(--card);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted)">…</div>'}
+      <span class="bq-name">${eh(item.name)}</span>
+      <span class="bq-status ${!item.dataURL?'pending':item.status}">${!item.dataURL?'⏳ Loading…':item.status==='done'?'✅ Zone Set':'⏳ Pending'}</span>
+      <div class="br" style="margin:0">
+        ${item.dataURL?`<button class="btn ${item.zone?'a':'g'} sm" onclick="openZoneEditor(${i})">${item.zone?'✏️ Edit Zone':'🎯 Set Zone'}</button>`:''}
+        <button class="btn r sm" onclick="removeFromQueue(${i})">✕</button>
+      </div>
+    </div>
+    ${item.zone?`<div style="font-size:.71rem;color:var(--blue2)">✅ Zone: ${item.zone.x},${item.zone.y} ${item.zone.w}×${item.zone.h} · ${item.zone.font}</div>`:'<div style="font-size:.71rem;color:var(--amber)">⚠️ No promo zone set — promo code will not appear on image</div>'}
+  </div>`).join('');
+}
+function removeFromQueue(i){queue.splice(i,1);if(activeQIdx===i)closeZoneEditor();renderQueue();}
+function clearQueue(){queue=[];renderQueue();closeZoneEditor();}
+
+// Zone editor
+function openZoneEditor(i){
+  if(!queue[i]||!queue[i].dataURL){toast('Image loading…','err');return;}
+  activeQIdx=i;const item=queue[i];
+  const edEl=document.getElementById('zone-editor');edEl.style.display='block';
+  setTimeout(()=>edEl.scrollIntoView({behavior:'smooth',block:'start'}),50);
+  document.getElementById('ze-banner-name').textContent=item.name;
+  document.getElementById('ze-controls').style.display='none';
+  document.getElementById('drag-rect').style.display='none';
+  zeState={isDragging:false,start:{x:0,y:0},zone:null};
+  drawZECanvas(item);
+  if(item.zone){
+    ['ze-font','ze-size','ze-color','ze-align'].forEach(id=>{
+      const val={font:item.zone.font,size:item.zone.size,color:item.zone.color,align:item.zone.align}[id.replace('ze-','')];
+      if(val!==undefined)document.getElementById(id).value=val;
+    });
+    document.getElementById('ze-autofit').checked=item.zone.autofit!==false;
+    document.getElementById('ze-gradient').checked=!!item.zone.gradient;
+    if(item.zone.gradient){document.getElementById('ze-color2').value=item.zone.color2||'#ff9800';document.getElementById('ze-grad-dir').value=item.zone.gradDir||'lr';toggleGradUI();}
+    showZoneRect(item.zone);document.getElementById('ze-controls').style.display='block';updateFontPreview();
+  }
+}
+function drawZECanvas(item){
+  const img=new Image();
+  img.onload=function(){
+    const outer=document.getElementById('ze-outer');const inner=document.getElementById('ze-inner');const canvas=document.getElementById('ze-canvas');
+    const availW=Math.max(300,(outer.clientWidth||700)-4);
+    zeScale=Math.min(1,availW/img.width);
+    const dW=Math.round(img.width*zeScale),dH=Math.round(img.height*zeScale);
+    canvas.width=img.width;canvas.height=img.height;canvas.style.width=dW+'px';canvas.style.height=dH+'px';canvas.style.display='block';
+    inner.style.width=dW+'px';inner.style.height=dH+'px';
+    canvas.getContext('2d').drawImage(img,0,0);attachZEDrag(canvas,inner);
+  };
+  img.src=item.dataURL;
+}
+function attachZEDrag(canvas,inner){
+  if(_zeL.move)document.removeEventListener('mousemove',_zeL.move);if(_zeL.up)document.removeEventListener('mouseup',_zeL.up);
+  if(_zeL.tm)document.removeEventListener('touchmove',_zeL.tm);if(_zeL.tu)document.removeEventListener('touchend',_zeL.tu);
+  const rect=document.getElementById('drag-rect');
+  function getPos(e){const cr=canvas.getBoundingClientRect();const src=e.touches?e.touches[0]:e;return{x:Math.max(0,Math.min(src.clientX-cr.left,cr.width))/zeScale,y:Math.max(0,Math.min(src.clientY-cr.top,cr.height))/zeScale};}
+  function onDown(e){if(e.target!==canvas)return;e.preventDefault();zeState.isDragging=true;zeState.start=getPos(e);zeState.zone=null;rect.style.display='block';rect.style.width='0';rect.style.height='0';document.getElementById('ze-controls').style.display='none';}
+  function onMove(e){
+    if(!zeState.isDragging)return;e.preventDefault();const cur=getPos(e);
+    const ix=Math.min(zeState.start.x,cur.x),iy=Math.min(zeState.start.y,cur.y);
+    const iw=Math.abs(cur.x-zeState.start.x),ih=Math.abs(cur.y-zeState.start.y);
+    zeState.zone={x:Math.round(ix),y:Math.round(iy),w:Math.round(iw),h:Math.round(ih)};
+    const cr=canvas.getBoundingClientRect(),ir=inner.getBoundingClientRect();
+    rect.style.left=(cr.left-ir.left+ix*zeScale)+'px';rect.style.top=(cr.top-ir.top+iy*zeScale)+'px';rect.style.width=(iw*zeScale)+'px';rect.style.height=(ih*zeScale)+'px';
+  }
+  function onUp(){
+    if(!zeState.isDragging)return;zeState.isDragging=false;
+    if(zeState.zone&&zeState.zone.w>5&&zeState.zone.h>5){document.getElementById('ze-info').value=`X:${zeState.zone.x} Y:${zeState.zone.y} W:${zeState.zone.w} H:${zeState.zone.h}`;document.getElementById('ze-controls').style.display='block';updateFontPreview();}
+  }
+  canvas.addEventListener('mousedown',onDown);canvas.addEventListener('touchstart',e=>{if(e.target===canvas){e.preventDefault();onDown(e);}},{passive:false});
+  _zeL.move=onMove;_zeL.up=onUp;_zeL.tm=e=>{if(zeState.isDragging){e.preventDefault();onMove(e);}};_zeL.tu=onUp;
+  document.addEventListener('mousemove',_zeL.move);document.addEventListener('mouseup',_zeL.up);document.addEventListener('touchmove',_zeL.tm,{passive:false});document.addEventListener('touchend',_zeL.tu);
+}
+function showZoneRect(z){const rect=document.getElementById('drag-rect');rect.style.display='block';rect.style.left=(z.x*zeScale)+'px';rect.style.top=(z.y*zeScale)+'px';rect.style.width=(z.w*zeScale)+'px';rect.style.height=(z.h*zeScale)+'px';document.getElementById('ze-info').value=`X:${z.x} Y:${z.y} W:${z.w} H:${z.h}`;}
+function toggleGradUI(){const on=document.getElementById('ze-gradient').checked;document.getElementById('grad-c2').style.display=on?'':'none';document.getElementById('grad-dir').style.display=on?'':'none';updateFontPreview();}
+function calcAutoFitSize(ctx,text,zW,zH,fontFamily){
+  let lo=6,hi=Math.min(Math.floor(zH*1.05),400),best=lo;
+  for(let i=0;i<26;i++){if(lo>hi)break;const mid=Math.floor((lo+hi)/2);ctx.font=`bold ${mid}px '${fontFamily}',Arial,sans-serif`;const m=ctx.measureText(text);const tw=m.width;const th=(m.actualBoundingBoxAscent!==undefined)?(m.actualBoundingBoxAscent+m.actualBoundingBoxDescent):mid*1.1;if(tw<=zW&&th<=zH){best=mid;lo=mid+1;}else{hi=mid-1;}}
+  return Math.max(best,6);
+}
+function updateFontPreview(){
+  const font=document.getElementById('ze-font').value,manualSize=parseInt(document.getElementById('ze-size').value)||36,color=document.getElementById('ze-color').value,gradient=document.getElementById('ze-gradient').checked,color2=document.getElementById('ze-color2').value,gradDir=document.getElementById('ze-grad-dir').value,autofit=document.getElementById('ze-autofit').checked,align=document.getElementById('ze-align').value;
+  const canvas=document.getElementById('font-preview');const ctx=canvas.getContext('2d');
+  const zW=zeState.zone?Math.max(zeState.zone.w,80):380,zH=zeState.zone?Math.max(zeState.zone.h,40):60;
+  canvas.width=Math.max(400,zW);canvas.height=Math.max(70,zH+10);ctx.fillStyle='#0d0d15';ctx.fillRect(0,0,canvas.width,canvas.height);
+  let fsize=manualSize;if(autofit)fsize=calcAutoFitSize(ctx,'PROMO50',canvas.width-20,canvas.height-10,font);
+  ctx.font=`bold ${fsize}px '${font}',Arial,sans-serif`;
+  if(gradient&&color2){const dir=gradDir||'lr';let grd;if(dir==='lr')grd=ctx.createLinearGradient(10,0,canvas.width-10,0);else if(dir==='tb')grd=ctx.createLinearGradient(0,5,0,canvas.height-5);else grd=ctx.createLinearGradient(10,5,canvas.width-10,canvas.height-5);grd.addColorStop(0,color);grd.addColorStop(1,color2);ctx.fillStyle=grd;}else{ctx.fillStyle=color;}
+  ctx.textAlign=align||'center';ctx.textBaseline='middle';ctx.fillText('PROMO50',align==='left'?12:align==='right'?canvas.width-12:canvas.width/2,canvas.height/2);
+}
+function confirmZone(){
+  const zone=zeState.zone||(()=>{const p=document.getElementById('ze-info').value.match(/X:(\d+) Y:(\d+) W:(\d+) H:(\d+)/);return p?{x:+p[1],y:+p[2],w:+p[3],h:+p[4]}:null;})();
+  if(!zone||zone.w<5){toast('Drag a zone first','err');return;}
+  zone.font=document.getElementById('ze-font').value;zone.size=parseInt(document.getElementById('ze-size').value)||36;zone.color=document.getElementById('ze-color').value;zone.align=document.getElementById('ze-align').value;zone.autofit=document.getElementById('ze-autofit').checked;zone.gradient=document.getElementById('ze-gradient').checked;zone.color2=document.getElementById('ze-color2').value;zone.gradDir=document.getElementById('ze-grad-dir').value;
+  if(activeQIdx!==null){queue[activeQIdx].zone=zone;queue[activeQIdx].status='done';}
+  closeZoneEditor();renderQueue();toast('✅ Zone confirmed!');
+}
+function clearZoneRect(){zeState.zone=null;document.getElementById('drag-rect').style.display='none';document.getElementById('ze-controls').style.display='none';document.getElementById('ze-info').value='';}
+function closeZoneEditor(){
+  document.getElementById('zone-editor').style.display='none';activeQIdx=null;
+  if(_zeL.move)document.removeEventListener('mousemove',_zeL.move);if(_zeL.up)document.removeEventListener('mouseup',_zeL.up);if(_zeL.tm)document.removeEventListener('touchmove',_zeL.tm);if(_zeL.tu)document.removeEventListener('touchend',_zeL.tu);_zeL={};
+}
+
+function compressImage(dataURL,maxW,quality){
+  return new Promise(res=>{const img=new Image();img.onload=()=>{const scale=Math.min(1,maxW/img.width);const w=Math.round(img.width*scale),h=Math.round(img.height*scale);const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);res(c.toDataURL('image/jpeg',quality||0.75));};img.onerror=()=>res(dataURL);img.src=dataURL;});
+}
+
+function stampCanvas(ctx,banner,promoCode){
+  if(!banner.promoConfig||!promoCode)return;const pc=banner.promoConfig;
+  ctx.save();ctx.beginPath();ctx.rect(pc.x,pc.y,pc.w,pc.h);ctx.clip();
+  const ff=pc.font?`'${pc.font}'`:'Arial Black';let fsize=pc.size||36;
+  if(pc.autofit!==false)fsize=calcAutoFitSize(ctx,promoCode,pc.w,pc.h,pc.font||'Arial Black');
+  ctx.font=`bold ${fsize}px ${ff},Arial,sans-serif`;
+  if(pc.gradient&&pc.color2){const dir=pc.gradDir||'lr';let grd;if(dir==='lr')grd=ctx.createLinearGradient(pc.x,pc.y,pc.x+pc.w,pc.y);else if(dir==='tb')grd=ctx.createLinearGradient(pc.x,pc.y,pc.x,pc.y+pc.h);else grd=ctx.createLinearGradient(pc.x,pc.y,pc.x+pc.w,pc.y+pc.h);grd.addColorStop(0,pc.color||'#fff');grd.addColorStop(1,pc.color2);ctx.fillStyle=grd;}else{ctx.fillStyle=pc.color||'#ffffff';}
+  const align=pc.align||'center';ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillText(promoCode,align==='center'?pc.x+pc.w/2:align==='left'?pc.x+4:pc.x+pc.w-4,pc.y+pc.h/2);ctx.restore();
+}
+
+async function saveAllBanners(){
+  const ready=queue.filter(item=>item.dataURL);
+  if(!queue.length){toast('No banners in queue','err');return;}
+  if(!ready.length){toast('Images still loading','err');return;}
+  const evergreen=document.getElementById('ban-type').value==='evergreen';
+  const startDate=document.getElementById('ban-start').value;const endDate=document.getElementById('ban-end').value;
+  if(!evergreen&&(!startDate||!endDate)){toast('Set start and end dates','err');return;}
+  const lang=document.getElementById('ban-lang').value;
+  const prog=document.getElementById('save-prog');let saved=0;
+  let banners=await memGet('banners');
+  const texts=await memGet('texts');
+  const langTexts=texts.filter(t=>t.lang===lang);
+
+  for(let i=0;i<queue.length;i++){
+    const item=queue[i];if(!item.dataURL)continue;
+    try{
+      showSov(`Uploading image ${i+1}/${queue.length} to Firestore…`,Math.round((i/queue.length)*80)+10);
+      prog.textContent=`Uploading ${i+1}/${queue.length}…`;
+      // Compress image to fit Firestore 1MB document limit
+      const compressed=await compressImage(item.dataURL,1280,0.72);
+      // Store image in its own Firestore document
+      const ok=await fsSet('img_'+item.id,{data:compressed,savedAt:Date.now()});
+      if(!ok){toast('Failed to upload '+item.name,'err');continue;}
+      const b={id:item.id,lang,evergreen,
+        startDate:evergreen?null:startDate,endDate:evergreen?null:endDate,
+        name:item.name,promoConfig:item.zone||null,
+        assignedTextId:langTexts.length?langTexts[saved%langTexts.length].id:null,
+        createdAt:Date.now()};
+      banners.push(b);saved++;
+    }catch(err){toast('Error: '+err.message,'err');}
+  }
+  if(saved>0){
+    showSov('Saving banner list…',90);
+    await memSet('banners',banners);
+  }
+  hideSov();clearQueue();renderBanners();prog.textContent='';
+  toast(saved>0?`✅ ${saved} banner(s) saved to Firestore!`:'❌ No banners saved','err');
+}
+
+function toggleDates(){const ev=document.getElementById('ban-type').value==='evergreen';document.getElementById('sg-start').style.display=ev?'none':'';document.getElementById('sg-end').style.display=ev?'none':'';}
+function bannerExpired(b){if(b.evergreen||!b.endDate)return false;const e=new Date(b.endDate);e.setHours(23,59,59,999);return Date.now()>e.getTime()+35*3600000;}
+function msUntilRemoval(b){if(b.evergreen||!b.endDate)return Infinity;const e=new Date(b.endDate);e.setHours(23,59,59,999);return Math.max(0,e.getTime()+35*3600000-Date.now());}
+function fmtCountdown(ms){if(ms<=0)return'Removing…';const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000),s=Math.floor((ms%60000)/1000);return`${h}h ${m}m ${s}s`;}
+
+let _cdTimers=[];
+async function renderBanners(){
+  _cdTimers.forEach(clearInterval);_cdTimers=[];
+  let banners=await memGet('banners');
+  const active=banners.filter(b=>!bannerExpired(b));
+  if(active.length!==banners.length){await memSet('banners',active);banners=active;}
+  document.getElementById('ban-cnt').textContent=banners.length;
+  const tb=document.getElementById('ban-tbody');
+  if(!banners.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">No banners saved</td></tr>';return;}
+  tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:8px;font-size:.77rem">Loading previews…</td></tr>';
+  const texts=await memGet('texts');
+  const rows=await Promise.all(banners.map(async b=>{
+    let thumbSrc='';
+    try{const imgDoc=await fsGet('img_'+b.id);thumbSrc=imgDoc?imgDoc.data:'';}catch(e){}
+    const thumb=thumbSrc?`<img src="${thumbSrc}" style="height:48px;width:76px;object-fit:cover;border-radius:5px;border:1px solid var(--border)"/>`:`<div style="width:76px;height:48px;background:var(--card2);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:.62rem;color:var(--muted)">No img</div>`;
+    const txt=texts.find(t=>t.id===b.assignedTextId);
+    const assign=txt?`<span style="font-size:.71rem;color:var(--blue2)">${LANGS[txt.lang]} caption</span>`:'<span style="color:var(--muted);font-size:.71rem">None</span>';
+    const ms=msUntilRemoval(b);const cdId='cd-'+b.id;
+    const expiryRow=b.evergreen?'No expiry':`${b.startDate||'—'} → ${b.endDate||'—'}<div style="font-size:.65rem;color:var(--amber);font-weight:700" id="${cdId}">${fmtCountdown(ms)}</div>`;
+    return`<tr>
+      <td>${thumb}</td>
+      <td><span class="bx ${b.evergreen?'bx-a':'bx-r'}">${b.evergreen?'♾️':'📅'}</span></td>
+      <td><span class="bx bx-b">${LANGS[b.lang]||b.lang}</span></td>
+      <td style="font-size:.74rem;color:var(--muted)">${expiryRow}</td>
+      <td>${b.promoConfig?'<span class="bx bx-r">✓</span>':'<span style="color:var(--muted);font-size:.71rem">—</span>'}</td>
+      <td>${assign}
+        <select onchange="assignText('${b.id}',this.value)" style="margin-top:4px;font-size:.71rem;padding:3px 6px;background:#0d0d15;border:1px solid var(--border);border-radius:5px;color:var(--text);width:100%">
+          <option value="">— Assign —</option>
+          ${texts.filter(t=>t.lang===b.lang).map((t,ti)=>`<option value="${t.id}" ${t.id===b.assignedTextId?'selected':''}>${LANGS[t.lang]} #${ti+1}</option>`).join('')}
+        </select>
+      </td>
+      <td><button class="btn r sm" onclick="delBanner('${b.id}')">🗑️</button></td>
+    </tr>`;
+  }));
+  tb.innerHTML=rows.join('');
+  banners.filter(b=>!b.evergreen).forEach(b=>{const el=document.getElementById('cd-'+b.id);if(!el)return;const t=setInterval(()=>{const ms2=msUntilRemoval(b);if(ms2<=0){clearInterval(t);renderBanners();return;}el.textContent=fmtCountdown(ms2);},1000);_cdTimers.push(t);});
+}
+async function assignText(bannerId,textId){
+  let banners=await memGet('banners');const b=banners.find(x=>x.id===bannerId);if(b){b.assignedTextId=textId||null;await memSet('banners',banners);toast('Caption assigned');}
+}
+async function delBanner(id){
+  if(!confirm('Delete?'))return;showSov('Deleting…',40);
+  const banners=await memGet('banners');await memSet('banners',banners.filter(b=>b.id!==id));await fsDel('img_'+id);
+  hideSov();renderBanners();toast('Deleted');
+}
+
+// ══════════════════════════════════════════════════
+// TEXTS / CAPTIONS
+// ══════════════════════════════════════════════════
+let txtFilter='all';
+async function saveTxt(){
+  const editId=document.getElementById('txt-edit-id').value;const content=document.getElementById('txt-body').value.trim();const lang=document.getElementById('txt-lang').value;
+  if(!content){toast('Caption text required','err');return;}
+  showSov('Saving caption…',50);
+  let texts=await memGet('texts');const obj={id:editId||uid(),lang,content};
+  if(editId)texts=texts.map(t=>t.id===editId?obj:t);else texts.push(obj);
+  await memSet('texts',texts);clearTxt();hideSov();renderTxts();toast('✅ Caption saved!');
+}
+function clearTxt(){document.getElementById('txt-body').value='';document.getElementById('txt-edit-id').value='';document.getElementById('txt-title').textContent='Add Caption';document.getElementById('txt-icon').textContent='➕';document.getElementById('txt-edit-note').style.display='none';}
+async function editTxt(id){const t=(await memGet('texts')).find(x=>x.id===id);if(!t)return;document.getElementById('txt-edit-id').value=t.id;document.getElementById('txt-lang').value=t.lang;document.getElementById('txt-body').value=t.content;document.getElementById('txt-title').textContent='Edit Caption';document.getElementById('txt-icon').textContent='✏️';document.getElementById('txt-edit-note').style.display='inline';window.scrollTo({top:0,behavior:'smooth'});}
+async function delTxt(id){if(!confirm('Delete?'))return;showSov('Deleting…',40);const texts=await memGet('texts');await memSet('texts',texts.filter(t=>t.id!==id));hideSov();renderTxts();toast('Deleted');}
+function filterTxt(lang,el){txtFilter=lang;document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));if(el)el.classList.add('on');renderTxts();}
+async function renderTxts(){
+  const texts=await memGet('texts');const filtered=txtFilter==='all'?texts:texts.filter(t=>t.lang===txtFilter);
+  document.getElementById('txt-cnt').textContent=texts.length;
+  const c=document.getElementById('txt-list');
+  if(!filtered.length){c.innerHTML='<div style="text-align:center;color:var(--muted);padding:24px">No captions found</div>';return;}
+  c.innerHTML=filtered.map((t,i)=>`<div class="tc"><div class="tc-top">
+    <div style="display:flex;align-items:center;gap:6px"><span class="bx bx-r">${LANGS[t.lang]||t.lang}</span><span style="font-size:.68rem;color:var(--muted)">#${i+1}</span></div>
+    <div class="br"><button class="btn a sm" onclick="editTxt('${t.id}')">✏️</button><button class="btn r sm" onclick="delTxt('${t.id}')">🗑️</button></div>
+  </div><pre>${eh(t.content)}</pre></div>`).join('');
+}
+
+let txtXlRows=[];
+function txtXlImport(){
+  const file=document.getElementById('txt-xl-in').files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      const isHdr=r=>r[0]&&String(r[0]).toLowerCase().match(/post|name|caption|label/);
+      const data=rows.filter((r,i)=>!(i===0&&isHdr(r))).filter(r=>String(r[0]||'').trim()||String(r[1]||'').trim());
+      const langs=['en','fr','ar','es','pt'];txtXlRows=[];const previewRows=[];
+      data.forEach((r,ri)=>{const label=String(r[0]||'Post '+(ri+1)).trim();langs.forEach((lang,li)=>{const content=String(r[li+1]||'').trim();if(!content)return;txtXlRows.push({id:uid(),lang,content,label});previewRows.push({label,lang,preview:content.slice(0,50)});});});
+      if(!txtXlRows.length){toast('No valid captions','err');return;}
+      document.getElementById('txt-xl-count').textContent=`✅ ${txtXlRows.length} captions from ${data.length} post(s)`;
+      document.getElementById('txt-xl-table').innerHTML=`<table><thead><tr><th>Post</th><th>Lang</th><th>Preview</th></tr></thead><tbody>${previewRows.slice(0,20).map(r=>`<tr><td>${eh(r.label)}</td><td>${r.lang.toUpperCase()}</td><td>${eh(r.preview)}…</td></tr>`).join('')}</tbody></table>`;
+      document.getElementById('txt-xl-prev').style.display='block';
+    }catch(err){toast('Error: '+err.message,'err');}
+  };
+  reader.readAsArrayBuffer(file);
+}
+async function txtXlConfirm(){
+  showSov('Importing captions…',30);
+  let texts=await memGet('texts');let added=0;
+  txtXlRows.forEach(r=>{if(!texts.find(t=>t.content===r.content&&t.lang===r.lang)){texts.push(r);added++;}});
+  await memSet('texts',texts);txtXlCancel();hideSov();renderTxts();toast(`✅ ${added} captions imported!`);
+}
+function txtXlCancel(){txtXlRows=[];document.getElementById('txt-xl-in').value='';document.getElementById('txt-xl-prev').style.display='none';}
+
+// ══════════════════════════════════════════════════
+// BULK DOWNLOAD
+// ══════════════════════════════════════════════════
+async function populateDlAffs(){
+  const dlLang=document.getElementById('dl-lang').value;let affs=await memGet('affiliates');
+  if(dlLang!=='all')affs=affs.filter(a=>a.lang===dlLang);
+  const sel=document.getElementById('dl-aff');sel.innerHTML='<option value="all">All</option>'+affs.map(a=>`<option value="${ea(a.id)}">${eh(a.id)} — ${eh(a.promoCode)}</option>`).join('');
+}
+async function getDlScope(){
+  const dlLang=document.getElementById('dl-lang').value,dlType=document.getElementById('dl-type').value,dlAffId=document.getElementById('dl-aff').value;
+  let allAffs=await memGet('affiliates');let allBanners=(await memGet('banners')).filter(b=>!bannerExpired(b));
+  if(dlType==='dated')allBanners=allBanners.filter(b=>!b.evergreen);if(dlType==='evergreen')allBanners=allBanners.filter(b=>b.evergreen);
+  if(dlAffId!=='all')allAffs=allAffs.filter(a=>a.id===dlAffId);
+  const pairs=[];
+  for(const aff of allAffs){const affLang=aff.lang||'en';const matchBanners=allBanners.filter(b=>dlLang!=='all'?b.lang===dlLang&&b.lang===affLang:b.lang===affLang);for(const b of matchBanners)pairs.push({aff,banner:b});}
+  return pairs;
+}
+function makeFilename(promoCode,banner){const s=v=>String(v||'').replace(/[^a-zA-Z0-9_\-]/g,'_');return banner.evergreen?`${s(promoCode)}_evergreen.png`:`${s(promoCode)}_${s(banner.startDate)}_to_${s(banner.endDate)}.png`;}
+async function previewDownload(){
+  const pairs=await getDlScope();const prev=document.getElementById('dl-preview-list');prev.style.display='block';
+  if(!pairs.length){prev.innerHTML='<div style="color:var(--muted);font-size:.81rem;padding:10px">No matching pairs.</div>';return;}
+  prev.innerHTML=`<div style="font-size:.73rem;color:var(--ac);margin-bottom:7px;font-weight:700">${pairs.length} file(s):</div><div style="max-height:200px;overflow-y:auto;background:var(--card2);border-radius:8px;padding:7px 11px">${pairs.map(({aff,banner})=>`<div style="font-size:.76rem;padding:3px 0;border-bottom:1px solid var(--border)"><strong style="color:var(--ac)">${eh(aff.id)}</strong> → ${makeFilename(aff.promoCode,banner)}</div>`).join('')}</div>`;
+}
+async function startBulkDownload(){
+  const pairs=await getDlScope();if(!pairs.length){toast('No matching pairs','err');return;}
+  const structure=document.getElementById('dl-structure').value;
+  const progEl=document.getElementById('dl-progress');const progText=document.getElementById('dl-prog-text');const progFill=document.getElementById('dl-prog-fill');
+  progEl.style.display='block';
+  // Pre-fetch all images from Firestore
+  const bannerIds=[...new Set(pairs.map(p=>p.banner.id))];const imgCache={};
+  for(const bid of bannerIds){try{const d=await fsGet('img_'+bid);imgCache[bid]=d?d.data:null;}catch(e){imgCache[bid]=null;}}
+  function loadImg(src){return new Promise(res=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>res(null);i.src=src;});}
+  const total=pairs.length;let done=0;
+  async function renderPair(aff,banner){const src=imgCache[banner.id];if(!src)return null;const img=await loadImg(src);if(!img)return null;const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const ctx=c.getContext('2d');ctx.drawImage(img,0,0);stampCanvas(ctx,banner,aff.promoCode);return new Promise(res=>c.toBlob(res,'image/png'));}
+  if(structure==='perAff'){
+    const byAff={};pairs.forEach(p=>{if(!byAff[p.aff.id])byAff[p.aff.id]={aff:p.aff,pairs:[]};byAff[p.aff.id].pairs.push(p);});
+    for(const affId of Object.keys(byAff)){const{aff,pairs:ap}=byAff[affId];const zip=new JSZip();for(const{banner}of ap){const blob=await renderPair(aff,banner);if(blob)zip.file(makeFilename(aff.promoCode,banner),blob);done++;progText.textContent=`Processing ${done}/${total}…`;progFill.style.width=Math.round(done/total*100)+'%';await new Promise(r=>setTimeout(r,5));}
+    const zb=await zip.generateAsync({type:'blob'});const a=document.createElement('a');a.href=URL.createObjectURL(zb);a.download=`megapari_${aff.id}.zip`;a.click();await new Promise(r=>setTimeout(r,400));}
+  }else{
+    const zip=new JSZip();for(const{aff,banner}of pairs){const folder=zip.folder(aff.id+'_'+aff.promoCode);const blob=await renderPair(aff,banner);if(blob)folder.file(makeFilename(aff.promoCode,banner),blob);done++;progText.textContent=`Processing ${done}/${total}…`;progFill.style.width=Math.round(done/total*100)+'%';await new Promise(r=>setTimeout(r,5));}
+    progText.textContent='Compressing…';const zb=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});const a=document.createElement('a');a.href=URL.createObjectURL(zb);a.download=`megapari_banners_${new Date().toISOString().slice(0,10)}.zip`;a.click();
+  }
+  progText.textContent='✅ Done!';setTimeout(()=>progEl.style.display='none',4000);toast('✅ ZIP ready!');
+}
+
+// ══════════════════════════════════════════════════
+// REGISTRATIONS
+// ══════════════════════════════════════════════════
+async function updateRegBadge(){
+  const pending=await memGet('regs');const badge=document.getElementById('reg-badge');
+  if(pending.length){badge.style.display='';badge.textContent=pending.length;}else{badge.style.display='none';}
+}
+async function renderRegs(){
+  const pending=await memGet('regs');const approved=await memGet('approvedregs');
+  document.getElementById('pending-cnt').textContent=pending.length;document.getElementById('approved-cnt').textContent=approved.length;
+  const pl=document.getElementById('pending-list');
+  pl.innerHTML=!pending.length?'<div style="color:var(--muted);text-align:center;padding:24px">No pending registrations</div>':pending.map((r,i)=>`<div class="reg-card">
+    <div style="font-size:.82rem;line-height:2;margin-bottom:9px"><strong style="color:var(--ac)">${eh(r.id)}</strong> · ${eh(r.name||'—')} · <span class="bx bx-r">${eh(r.promoCode)}</span> · ${LANGS[r.lang]||r.lang}<br><span style="font-size:.72rem;color:var(--muted)">Submitted: ${new Date(r.submittedAt||Date.now()).toLocaleString()}</span></div>
+    <div class="br"><button class="btn g sm" onclick="approveReg(${i})">✅ Approve</button><button class="btn a sm" onclick="editApproveReg(${i})">✏️ Edit & Approve</button><button class="btn r sm" onclick="rejectReg(${i})">✕ Reject</button></div>
+  </div>`).join('');
+  const al=document.getElementById('approved-list');al.innerHTML=!approved.length?'<div style="color:var(--muted);text-align:center;padding:18px">None yet</div>':approved.slice(-20).reverse().map(r=>`<div style="font-size:.8rem;padding:7px 0;border-bottom:1px solid var(--border)">${eh(r.id)} · ${eh(r.name||'—')} · <span class="bx bx-r">${eh(r.promoCode)}</span></div>`).join('');
+}
+async function approveReg(i){
+  let pending=await memGet('regs');const r=pending[i];if(!r)return;
+  showSov('Approving…',50);
+  let affs=await memGet('affiliates');const ei=affs.findIndex(a=>a.id.toLowerCase()===r.id.toLowerCase());
+  if(ei>=0)affs[ei]=r;else affs.push(r);await memSet('affiliates',affs);
+  const approved=await memGet('approvedregs');approved.push(r);await memSet('approvedregs',approved);
+  pending.splice(i,1);await memSet('regs',pending);
+  memInvalidate('affiliates');memInvalidate('regs');memInvalidate('approvedregs');
+  hideSov();renderRegs();renderAffs();toast('✅ Approved & live!');updateRegBadge();
+}
+async function editApproveReg(i){
+  const pending=await memGet('regs');const r=pending[i];if(!r)return;
+  go('affiliates',document.querySelector('.nav'));
+  ['id','name','promo','player','apk','ios'].forEach((f,fi)=>{const keys=['id','name','promoCode','playerLink','apkLink','iosLink'];document.getElementById('a-'+f).value=r[keys[fi]]||'';});
+  document.getElementById('a-lang').value=r.lang||'en';document.getElementById('aff-form-title').textContent='Approve: '+r.id;
+  pending.splice(i,1);await memSet('regs',pending);memInvalidate('regs');updateRegBadge();window.scrollTo({top:0,behavior:'smooth'});toast('Edit details then Save Affiliate');
+}
+async function rejectReg(i){
+  if(!confirm('Reject?'))return;const pending=await memGet('regs');pending.splice(i,1);await memSet('regs',pending);memInvalidate('regs');renderRegs();toast('Rejected');updateRegBadge();
+}
+
+// ══════════════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════════════
+async function changePw(){
+  const cur=document.getElementById('cur-pw').value;const nw=document.getElementById('new-pw').value;const conf=document.getElementById('conf-pw').value;
+  const cfg=await fsGet('config');const stored=(cfg&&cfg.adminpw)?cfg.adminpw:'admin123';
+  if(cur!==stored){toast('❌ Wrong current password','err');return;}
+  if(!nw||nw.length<4){toast('New password must be at least 4 characters','err');return;}
+  if(nw!==conf){toast('❌ Passwords do not match','err');return;}
+  showSov('Updating password…',60);
+  await fsSet('config',{...(cfg||{}),adminpw:nw});
+  hideSov();['cur-pw','new-pw','conf-pw'].forEach(f=>document.getElementById(f).value='');toast('✅ Password updated!');
+}
+
+async function exportData(){
+  const d={affiliates:await memGet('affiliates'),texts:await memGet('texts'),banners:await memGet('banners'),regs:await memGet('regs'),approvedregs:await memGet('approvedregs'),exportedAt:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='megapari-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();toast('✅ Exported!');
+}
+function importData(){
+  const file=document.getElementById('imp-in').files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=async function(e){
+    try{
+      const d=JSON.parse(e.target.result);showSov('Importing to Firestore…',30);
+      if(d.affiliates){await memSet('affiliates',d.affiliates);}
+      if(d.texts){await memSet('texts',d.texts);}
+      if(d.banners){await memSet('banners',d.banners);}
+      if(d.regs){await memSet('regs',d.regs);}
+      if(d.approvedregs){await memSet('approvedregs',d.approvedregs);}
+      Object.keys(_mem).forEach(k=>delete _mem[k]);
+      hideSov();renderAffs();renderTxts();renderBanners();renderRegs();toast('✅ Imported to Firestore!');
+    }catch(err){hideSov();toast('Invalid file: '+err.message,'err');}
+  };
+  r.readAsText(file);
+}
+
+// Migrate existing localStorage data to Firestore
+async function migrateLocalStorage(){
+  if(!confirm('Push any existing localStorage data to Firestore? This will not delete local data.'))return;
+  showSov('Migrating…',20);
+  function lsGet(k,d){try{const v=JSON.parse(localStorage.getItem('mp_'+k));return v!==null?v:d;}catch(e){return d;}}
+  const affs=lsGet('affiliates',[]);const texts=lsGet('texts',[]);const banners=lsGet('banners',[]);const regs=lsGet('pendingRegs',[]);const approved=lsGet('approvedRegs',[]);
+  let migrated=0;
+  if(affs.length){await memSet('affiliates',affs);migrated+=affs.length;}
+  if(texts.length){await memSet('texts',texts);migrated+=texts.length;}
+  if(banners.length){await memSet('banners',banners);migrated+=banners.length;}
+  if(regs.length){await memSet('regs',regs);migrated+=regs.length;}
+  if(approved.length){await memSet('approvedregs',approved);migrated+=approved.length;}
+  Object.keys(_mem).forEach(k=>delete _mem[k]);
+  hideSov();renderAffs();renderTxts();renderBanners();renderRegs();
+  toast(`✅ Migrated ${migrated} records to Firestore!`);
+}
+
+async function clearAll(){
+  if(!confirm('Delete ALL Firestore data?'))return;if(!confirm('FINAL CONFIRM — cannot be undone!'))return;
+  showSov('Clearing…',50);
+  await Promise.all(['affiliates','banners','texts','regs','approvedregs'].map(k=>fsSet(k,{list:[]})));
+  Object.keys(_mem).forEach(k=>delete _mem[k]);
+  hideSov();renderAffs();renderBanners();renderTxts();renderRegs();toast('All data cleared');
+}
+
+async function renderStats(){
+  const a=(await memGet('affiliates')).length,b=await memGet('banners'),t=await memGet('texts'),pr=(await memGet('regs')).length;
+  const byL={en:0,fr:0,ar:0,es:0,pt:0};t.forEach(x=>{if(byL[x.lang]!==undefined)byL[x.lang]++;});
+  const sc=(v,l,c)=>`<div style="background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:13px;text-align:center"><div style="font-size:1.5rem;font-weight:700;color:${c};font-family:'Bebas Neue',sans-serif">${v}</div><div style="font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px">${l}</div></div>`;
+  document.getElementById('stats-area').innerHTML=sc(a,'Affiliates','var(--ac)')+sc(b.length,'Banners','var(--amber)')+sc(t.length,'Captions','var(--blue2)')+sc(pr,'Pending','var(--amber)')+Object.entries(byL).map(([l,n])=>sc(n,LANGS[l],'var(--muted)')).join('');
+}
+
+// ══════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════
+function toast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.style.background=type==='err'?'var(--red)':'var(--ac)';t.style.color='#fff';t.classList.add('on');setTimeout(()=>t.classList.remove('on'),3200);}
+function eh(s){const d=document.createElement('div');d.textContent=String(s||'');return d.innerHTML;}
+function ea(s){return String(s||'').replace(/'/g,"\\'");}
+
+// ══════════════════════════════════════════════════
+// FORM GENERATOR — 100% local, no Firestore, no storage
+// ══════════════════════════════════════════════════
+(function(){
+  // All IDs prefixed fg- so they never clash with admin elements
+
+  const FG_TEMPLATE3 = `MEGAPARI POST SAMPLES WITH LINKS
+
+Here's a full 7-day lineup of Megapari promo posts
+
+🎯 MONDAY – Kickstart the Week!
+
+Start your week with a win! 💪
+🎮 Sign up on Megapari and grab your 200% bonus today!
+
+Player here 👉 {{link1}}
+
+Download the APK 📲: {{link2}}
+
+🎁 Promo code: {{promoCode}}
+
+⚡ High odds | 💰 Fast payouts | 🎯 Big wins
+Play smart. Win big. Only on Megapari!
+
+#Megapari #MondayMotivation #Bonus #SportsBetting
+
+---
+
+🔥 TUESDAY – Double Your Chances!
+
+Tuesday is for winners! 💥
+Register on Megapari, use promo {{promoCode}}, and get a 200% bonus instantly!
+
+👉 {{link1}}
+📲 Download the app and start playing: {{link2}}
+
+🎯 Bet smart. Win more. Enjoy Megapari!
+
+#Megapari #TuesdayVibes #Bonus #Gaming
+
+---
+
+💰 WEDNESDAY – Midweek Wins!
+
+It's midweek – time to cash in! 💎
+🎮 Join Megapari, enter promo code {{promoCode}},
+and get up to 200% on your first deposit!
+
+🔗 {{link1}}
+📲 App: {{link2}}
+
+🚀 Play smart, win fast, withdraw easy.
+#Megapari #MidweekBonus #Betting #Casino
+
+---
+
+⚡ THURSDAY – Get Ready for the Weekend!
+
+Weekend loading... 🎉
+Warm up your luck with a 200% Megapari bonus!
+
+1️⃣ Register 👉 {{link1}}
+2️⃣ Enter promo code: {{promoCode}}
+3️⃣ Deposit & start winning 💰
+
+🎯 High odds | 💸 Quick withdrawals | 🔥 Non-stop action
+#Megapari #ThursdayMood #Promo #SportsBetting
+
+---
+
+🎉 FRIDAY – Bonus Friday!
+
+It's Bonus Friday on Megapari 🎁
+Sign up, use promo code {{promoCode}}, and get 200% extra to start the weekend strong!
+
+🔗 {{link1}}
+📲 Download the app: {{link2}}
+
+💥 Fast payouts. High odds. Real wins.
+Let's make this Friday legendary! ⚡
+#Megapari #FridayFeeling #Casino #Bonus
+
+---
+
+🔥 SATURDAY – Weekend Power Play!
+
+Game time! 🎮
+Register on Megapari, enter promo {{promoCode}},
+and get up to 200% bonus instantly!
+
+👉 {{link1}}
+📲 App: {{link2}}
+
+🎯 More bets. More wins. More fun!
+#Megapari #WeekendBonus #SportsBetting #Gaming
+
+---
+
+💎 SUNDAY – End the Week Strong!
+
+Wrap up your week with a win! 🏆
+Sign up on Megapari, use promo code {{promoCode}},
+and get your 200% bonus right now!
+
+🔗 {{link1}}
+📲 {{link2}}
+
+💰 Fast payouts | 🎯 Great odds | 💥 Non-stop excitement
+Play. Win. Celebrate with Megapari!
+
+#Megapari #SundayFunday #Casino #Bonus`;
+
+  function fgVal(id){ return (document.getElementById(id)||{}).value||''; }
+
+  window.fgGenerate = function(){
+    const d = {
+      affId:         fgVal('fg-affId'),
+      referralLink:  fgVal('fg-referralLink'),
+      androidLink:   fgVal('fg-androidLink'),
+      promoCode:     fgVal('fg-promoCode'),
+      joinUs:        fgVal('fg-joinUs'),
+      trafficSource: fgVal('fg-trafficSource'),
+      deal:          fgVal('fg-deal'),
+      country:       fgVal('fg-country'),
+      email:         fgVal('fg-email'),
+      contact:       fgVal('fg-contact'),
+      link1:         fgVal('fg-link1'),
+      link2:         fgVal('fg-link2'),
+    };
+
+    // ── Output 1 ──
+    document.getElementById('fg-out1').innerHTML = `<p><strong>YOUR ACCOUNT IS READY! 😊</strong></p>
+<div class="fg-sec">FIRST ACTIVATION</div>
+<p>🎉 Congratulations! Your account is now active! 🎉<br>Here's what you need to start promoting:</p>
+<p>Your Affiliate ID: <strong>${eh(d.affId)}</strong> (keep safe!)</p>
+<p>Referral link: <strong>${eh(d.referralLink)}</strong></p>
+<p>Referral link to download the Android app: <strong>${eh(d.androidLink)}</strong></p>
+<p>Promo code: <strong>${eh(d.promoCode)}</strong></p>
+<div class="fg-sec">Join the dedicated Telegram support group for faster, more personalized assistance</div>
+<p>We have created a dedicated Telegram group to support you.</p>
+<ul>
+  <li>Get quick answers from our management and support team.</li>
+  <li>Request banners and demo account top-ups.</li>
+  <li>Report any issues your players are experiencing.</li>
+</ul>
+<p>JOIN US HERE: <strong>${eh(d.joinUs)}</strong></p>
+<div class="fg-divider"></div>
+<p>Traffic source – <strong>${eh(d.trafficSource)}</strong><br>
+DEAL: <strong>${eh(d.deal)}</strong><br>
+Country: <strong>${eh(d.country)}</strong><br>
+Email: <strong>${eh(d.email)}</strong><br>
+Contact handle: <strong>${eh(d.contact)}</strong></p>`;
+
+    // ── Output 2 ──
+    document.getElementById('fg-out2').innerHTML = `<p><strong>YOUR ACCOUNT IS READY! 😊</strong></p>
+<p>Hello @,</p>
+<p>Welcome to Megapari Partners! We're excited to have you on board.</p>
+<p>Feel free to use this group for any inquiries, including banners, demo accounts, and more.<br>Here are your account details:</p>
+<p>Your Affiliate ID: <strong>${eh(d.affId)}</strong> (keep safe!)</p>
+<p>Referral link: <strong>${eh(d.referralLink)}</strong></p>
+<p>Referral link to download the Android app: <strong>${eh(d.androidLink)}</strong></p>
+<p>Promo code: <strong>${eh(d.promoCode)}</strong></p>
+<div class="fg-sec">To create a demo account</div>
+<p>Please register at megapari.com and provide the following information in this chat:</p>
+<p>Demo ID:<br><br>Currency:</p>`;
+
+    // ── Output 3 ──
+    document.getElementById('fg-out3').value = FG_TEMPLATE3
+      .replace(/{{link1}}/g,     d.link1)
+      .replace(/{{link2}}/g,     d.link2)
+      .replace(/{{promoCode}}/g, d.promoCode);
+
+    // ── Output 4 — table ──
+    const today = new Date();
+    const startDate = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+    const headers = ['AFF ID','STATUS','EMAIL/TELEGRAM','GEO','DEAL','SOURCE','LINK BY SOURCE','START OF WORK','NOTES','BRAND'];
+    document.getElementById('fg-tableHead').innerHTML = headers.map(h=>'<th>'+h+'</th>').join('');
+    document.getElementById('fg-tableRow').innerHTML = [
+      '<td>'+eh(d.affId)+'</td>',
+      '<td>Active</td>',
+      '<td>'+eh(d.contact)+'</td>',
+      '<td>'+eh(d.country)+'</td>',
+      '<td>'+eh(d.deal)+'</td>',
+      '<td id="fg-cellSource">'+eh(fgVal('fg-sourceSelect'))+'</td>',
+      '<td>'+eh(d.trafficSource)+'</td>',
+      '<td id="fg-cellStart">'+startDate+'</td>',
+      '<td>'+eh(fgVal('fg-notes'))+'</td>',
+      '<td>'+eh(fgVal('fg-brandSelect'))+'</td>',
+    ].join('');
+
+    document.getElementById('fg-outputs').style.display='flex';
+    document.getElementById('fg-outputs').scrollIntoView({behavior:'smooth',block:'start'});
+  };
+
+  window.fgCopyRendered = function(srcId, btnId){
+    const text = document.getElementById(srcId).innerText;
+    navigator.clipboard.writeText(text).then(()=>{
+      const b = document.getElementById(btnId);
+      b.textContent='✓ Copied!'; b.classList.add('fg-ok');
+      setTimeout(()=>{b.textContent='📋 Copy '+btnId.replace('fg-copy','Output ');b.classList.remove('fg-ok');},2200);
+    });
+  };
+
+  window.fgCopyTextarea = function(srcId, btnId){
+    const text = document.getElementById(srcId).value;
+    navigator.clipboard.writeText(text).then(()=>{
+      const b = document.getElementById(btnId);
+      b.textContent='✓ Copied!'; b.classList.add('fg-ok');
+      setTimeout(()=>{b.textContent='📋 Copy Output 3';b.classList.remove('fg-ok');},2200);
+    });
+  };
+
+  window.fgCopyTable = function(){
+    const headers = ['AFF ID','STATUS','EMAIL/TELEGRAM','GEO','DEAL','SOURCE','LINK BY SOURCE','START OF WORK','NOTES','BRAND'];
+    const cellStart = document.getElementById('fg-cellStart');
+    const values = [
+      fgVal('fg-affId'),
+      'Active',
+      fgVal('fg-contact'),
+      fgVal('fg-country'),
+      fgVal('fg-deal'),
+      fgVal('fg-sourceSelect'),
+      fgVal('fg-trafficSource'),
+      cellStart ? cellStart.innerText : new Date().toISOString().slice(0,10),
+      fgVal('fg-notes') || '-',
+      fgVal('fg-brandSelect') || 'Megapari',
+    ];
+    navigator.clipboard.writeText(headers.join('\t')+'\n'+values.join('\t')).then(()=>{
+      const b=document.getElementById('fg-copy4');
+      b.textContent='✓ Copied!';b.classList.add('fg-ok');
+      setTimeout(()=>{b.textContent='📋 Copy Output 4 (Tab-separated)';b.classList.remove('fg-ok');},2200);
+    });
+  };
+
+  window.fgFillDemo = function(){
+    const demo = {
+      'fg-affId':         '4839881',
+      'fg-referralLink':  'https://4839881.megapari-964205.net/',
+      'fg-androidLink':   'https://refpazitag.top/L?tag=d_4839881m_54987c_&site=4839881&ad=54987',
+      'fg-promoCode':     '45ROIS',
+      'fg-joinUs':        'https://t.me/megapari_support',
+      'fg-trafficSource': 'Facebook Ads',
+      'fg-deal':          '50% revshare',
+      'fg-country':       'Nigeria',
+      'fg-email':         'affiliate@example.com',
+      'fg-contact':       '@yourhandle',
+      'fg-link1':         'https://4839881.megapari-964205.net/',
+      'fg-link2':         'https://refpazitag.top/L?tag=d_4839881m_54987c_&site=4839881&ad=54987',
+    };
+    Object.entries(demo).forEach(([id,v])=>{ const el=document.getElementById(id); if(el)el.value=v; });
+  };
+
+  window.fgClear = function(){
+    ['fg-affId','fg-referralLink','fg-androidLink','fg-promoCode','fg-joinUs',
+     'fg-trafficSource','fg-deal','fg-country','fg-email','fg-contact','fg-notes'].forEach(id=>{
+      const el=document.getElementById(id); if(el)el.value='';
+    });
+    document.getElementById('fg-outputs').style.display='none';
+  };
+})();
+
+// ══════════════════════════════════════════════════
+async function ensureDefTxts(){
+  const t=await memGet('texts');if(t&&t.length>0)return;
+  await memSet('texts',[
+    {id:'e1',lang:'en',content:"⚽🔥 BIG MATCH ENERGY STARTS HERE!\n🎯 Register: {{Player link}}\n📲 APK: {{apk link}}\n🍏 iOS: {{iOS link}}\n🎁 Code: {{Promo code}}"},
+    {id:'e2',lang:'en',content:"Smart bettors use the right platform.\n👉 Join: {{Player link}}\n📥 Android: {{apk link}}\n📱 iOS: {{iOS link}}\n💰 Code: {{Promo code}}"},
+    {id:'f1',lang:'fr',content:"⚽🔥 MATCHS DE RÊVE = PROFITS RÉELS!\n🎯 Inscription: {{Player link}}\n📲 APK: {{apk link}}\n🍏 iOS: {{iOS link}}\n🎁 Code: {{Promo code}}"},
+    {id:'f2',lang:'fr',content:"Les parieurs intelligents choisissent Megapari.\n👉 Rejoignez: {{Player link}}\n📥 Android: {{apk link}}\n📱 iOS: {{iOS link}}\n💰 Code: {{Promo code}}"},
+    {id:'a1',lang:'ar',content:"⚽🔥 طاقة المباريات الكبيرة!\n🎯 سجّل: {{Player link}}\n📲 أندرويد: {{apk link}}\n🍏 iOS: {{iOS link}}\n🎁 كود: {{Promo code}}"},
+    {id:'a2',lang:'ar',content:"المراهنون الأذكياء يختارون Megapari.\n👉 انضم: {{Player link}}\n📥 أندرويد: {{apk link}}\n📱 iOS: {{iOS link}}\n💰 كود: {{Promo code}}"},
+    {id:'s1',lang:'es',content:"⚽🔥 ¡GRANDES PARTIDOS = GRANDES GANANCIAS!\n🎯 Regístrate: {{Player link}}\n📲 APK: {{apk link}}\n🍏 iOS: {{iOS link}}\n🎁 Código: {{Promo code}}"},
+    {id:'s2',lang:'es',content:"Los apostadores inteligentes eligen Megapari.\n👉 Únete: {{Player link}}\n📥 Android: {{apk link}}\n📱 iOS: {{iOS link}}\n💰 Código: {{Promo code}}"},
+    {id:'p1',lang:'pt',content:"⚽🔥 GRANDES JOGOS = GRANDES LUCROS!\n🎯 Registre-se: {{Player link}}\n📲 APK: {{apk link}}\n🍏 iOS: {{iOS link}}\n🎁 Código: {{Promo code}}"},
+    {id:'p2',lang:'pt',content:"Apostadores inteligentes escolhem Megapari.\n👉 Junte-se: {{Player link}}\n📥 Android: {{apk link}}\n📱 iOS: {{iOS link}}\n💰 Código: {{Promo code}}"},
+  ]);
+}
+</script>
+</body>
+</html>
